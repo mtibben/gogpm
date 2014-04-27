@@ -32,5 +32,5 @@ func findLastTagOrHEAD(pkg string) (string, error) {
 		return "", err
 	}
 
-	return vcs.CurrentTag(), nil
+	return vcs.LatestTag(), nil
 }

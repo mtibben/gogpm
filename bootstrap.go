@@ -6,6 +6,10 @@ import (
 )
 
 func bootstrap() {
+	if fileExists(depsFile) {
+		panic(">> A Godeps file exists within this directory.")
+	}
+
 	fmt.Println(">> Installing dependencies.")
 	execCmd("go get -d")
 

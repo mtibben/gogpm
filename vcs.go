@@ -11,12 +11,12 @@ type vcsCmd struct {
 	name string
 	cmd  string
 
-	currentTagCmd []string
-	tagSyncCmd    string
+	latestTagCmd []string
+	tagSyncCmd   string
 }
 
-func (v *vcsCmd) CurrentTag() (tag string) {
-	for _, c := range v.currentTagCmd {
+func (v *vcsCmd) LatestTag() (tag string) {
+	for _, c := range v.latestTagCmd {
 		tag = strings.TrimSpace(execCmd(c))
 		if tag != "" {
 			break
@@ -40,7 +40,7 @@ var vcsList = []*vcsCmd{
 var vcsHg = &vcsCmd{
 	name: "Mercurial",
 	cmd:  "hg",
-	currentTagCmd: []string{
+	latestTagCmd: []string{
 		`hg parents --template "{latesttag}"`,
 		`hg log --template "{node}" -l 1`,
 	},
@@ -50,7 +50,7 @@ var vcsHg = &vcsCmd{
 var vcsGit = &vcsCmd{
 	name: "Git",
 	cmd:  "git",
-	currentTagCmd: []string{
+	latestTagCmd: []string{
 		`git tag | xargs -I@ git log --format=format:"%ai @%n" -1 @ | sort | awk '{print $4}' | tail -1`,
 		`git log -n 1 --pretty=oneline | cut -d " " -f 1`,
 	},
@@ -60,7 +60,7 @@ var vcsGit = &vcsCmd{
 var vcsBzr = &vcsCmd{
 	name: "Bazaar",
 	cmd:  "bzr",
-	currentTagCmd: []string{
+	latestTagCmd: []string{
 		`bzr tags | tail -1 | cut -d " " -f 1`,
 		`bzr log -r-1 --log-format=line | cut -d ":" -f 1`,
 	},

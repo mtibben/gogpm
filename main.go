@@ -4,11 +4,46 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
+	"path/filepath"
 )
 
+const lockfile = "Godeps"
+
+var depsFile, workingDir string
+
+func main() {
+	// parse flags and opts
+	flag.Parse()
+	command := flag.Arg(0)
+
+	// get the working directory
+	var err error
+	workingDir, err = os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	// lock file name
+	depsFile = filepath.Clean(filepath.Join(workingDir, lockfile))
+
+	// Command Line Parsing
+	switch command {
+	case "version":
+		fmt.Println(">> gogpm 0.1 (gpm v1.2.1 equiv)")
+
+	case "bootstrap":
+		bootstrap()
+
+	case "install", "":
+		install()
+
+	default:
+		usage()
+	}
+}
+
 func usage() {
-	usagestring := `
+	usage := `
 SYNOPSIS
 
     gogpm leverages the power of the go get command and the underlying version
@@ -39,52 +74,6 @@ USAGE
       $ gogpm help        # Prints this message
 
 `
-	fmt.Fprintf(os.Stderr, usagestring)
+	fmt.Fprintf(os.Stderr, usage)
 	os.Exit(2)
-}
-
-var depsFile = "Godeps"
-
-var workingDir string
-
-func main() {
-	// parse flags and opts
-	flag.Parse()
-	command := flag.Arg(0)
-
-	var err error
-	workingDir, err = os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	depsFile = workingDir + "/" + depsFile
-
-	// Command Line Parsing
-	switch command {
-	case "version":
-		fmt.Println(">> gogpm 0.1 (gpm v1.2.1 equiv)")
-
-	case "install", "":
-		if !fileExists(depsFile) {
-			panic(fmt.Sprintf(">> %s file does not exist.\n", depsFile))
-		}
-
-		_, err := exec.LookPath("go")
-		if err != nil {
-			panic(">> Go is currently not installed or in your PATH\n")
-		}
-
-		install()
-
-	case "bootstrap":
-		if fileExists(depsFile) {
-			panic(">> A Godeps file exists within this directory.")
-		}
-
-		bootstrap()
-
-	default:
-		usage()
-	}
 }
