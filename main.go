@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func usage() {
@@ -34,7 +31,7 @@ USAGE
       $ gogpm install     # Parses the Godeps file, installs dependencies and sets
                           # them to the appropriate version.
 
-      $ gpm bootstrap     # Downloads all external top-level packages required by
+      $ gogpm bootstrap   # Downloads all external top-level packages required by
                           # your application and generates a Godeps file with their
                           # latest tags or revisions.
 
@@ -57,7 +54,6 @@ func main() {
 
 	var err error
 	workingDir, err = os.Getwd()
-	fmt.Println(workingDir)
 	if err != nil {
 		panic(err)
 	}
@@ -91,72 +87,4 @@ func main() {
 	default:
 		usage()
 	}
-}
-
-func fileExists(path string) bool {
-	fi, err := os.Stat(path)
-	if !os.IsNotExist(err) && !fi.IsDir() {
-		return true
-	}
-
-	return false
-}
-
-func dirExists(path string) bool {
-	fi, err := os.Stat(path)
-	if !os.IsNotExist(err) && fi.IsDir() {
-		return true
-	}
-
-	return false
-}
-
-func parseDepFile() map[string]string {
-	b, err := ioutil.ReadFile(depsFile)
-	if err != nil {
-		panic(err)
-	}
-
-	deps := make(map[string]string, len(b))
-	for _, line := range strings.Split(string(b), "\n") {
-		if line == "" {
-			continue
-		}
-		d := strings.Split(line, " ")
-
-		if len(d) != 2 {
-			panic("Couldn't parse " + depsFile)
-		}
-
-		deps[d[0]] = d[1]
-	}
-
-	return deps
-}
-
-func appendLineToDepFile(line string) {
-	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	if err != nil {
-		panic(err)
-	}
-
-	defer f.Close()
-
-	if _, err = f.WriteString(line + "\n"); err != nil {
-		panic(err)
-	}
-}
-
-func execCmd(cmd string) string {
-	command := exec.Command("bash")
-	var b bytes.Buffer
-	command.Stdin = bytes.NewBufferString(cmd)
-	command.Stdout = &b
-	// command.Stderr = os.Stderr
-	err := command.Run()
-	if err != nil {
-		panic(err)
-	}
-
-	return b.String()
 }
