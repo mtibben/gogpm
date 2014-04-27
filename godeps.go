@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -29,8 +30,14 @@ SYNOPSIS
 
 USAGE
       $ gogpm             # Same as 'install'.
+
       $ gogpm install     # Parses the Godeps file, installs dependencies and sets
                           # them to the appropriate version.
+
+      $ gpm bootstrap     # Downloads all external top-level packages required by
+                          # your application and generates a Godeps file with their
+                          # latest tags or revisions.
+
       $ gogpm version     # Outputs version information
       $ gogpm help        # Prints this message
 
@@ -39,11 +46,23 @@ USAGE
 	os.Exit(2)
 }
 
-const depsFile = "Godeps"
+var depsFile = "Godeps"
+
+var workingDir string
 
 func main() {
 	// parse flags and opts
+	flag.Parse()
 	command := flag.Arg(0)
+
+	var err error
+	workingDir, err = os.Getwd()
+	fmt.Println(workingDir)
+	if err != nil {
+		panic(err)
+	}
+
+	depsFile = workingDir + "/" + depsFile
 
 	// Command Line Parsing
 	switch command {
@@ -60,40 +79,18 @@ func main() {
 			panic(">> Go is currently not installed or in your PATH\n")
 		}
 
-		setDependencies(depsFile)
+		install()
+
+	case "bootstrap":
+		if fileExists(depsFile) {
+			panic(">> A Godeps file exists within this directory.")
+		}
+
+		bootstrap()
 
 	default:
 		usage()
 	}
-}
-
-// Iterates over Godep file dependencies and sets
-// the specified version on each of them.
-func setDependencies(depFile string) {
-	for pkg, version := range parseDepFile(depFile) {
-		installPath := os.Getenv("GOPATH") + "/src/" + pkg
-		fmt.Printf(">> Getting package %s\n", pkg)
-
-		execCmd(fmt.Sprintf(`go get -u -d "%s"`, pkg))
-		fmt.Printf(">> Setting %s to version %s\n", pkg, version)
-
-		err := os.Chdir(installPath)
-		if err != nil {
-			panic(err)
-		}
-
-		if dirExists(".hg") {
-			execCmd(fmt.Sprintf(`hg update -q "%s"`, version))
-		} else if dirExists(".git") {
-			execCmd(fmt.Sprintf(`git checkout -q "%s"`, version))
-		} else if dirExists(".bzr") {
-			execCmd(fmt.Sprintf(`bzr revert -q -r "%s"`, version))
-		} else if dirExists(".svn") {
-			execCmd(fmt.Sprintf(`svn update -r "%s"`, version))
-		}
-	}
-
-	fmt.Println(">> All Done")
 }
 
 func fileExists(path string) bool {
@@ -114,8 +111,8 @@ func dirExists(path string) bool {
 	return false
 }
 
-func parseDepFile(depFile string) map[string]string {
-	b, err := ioutil.ReadFile(depFile)
+func parseDepFile() map[string]string {
+	b, err := ioutil.ReadFile(depsFile)
 	if err != nil {
 		panic(err)
 	}
@@ -137,12 +134,29 @@ func parseDepFile(depFile string) map[string]string {
 	return deps
 }
 
-func execCmd(cmd string) {
-	command := exec.Command("bash", "-c", cmd)
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
+func appendLineToDepFile(line string) {
+	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(line + "\n"); err != nil {
+		panic(err)
+	}
+}
+
+func execCmd(cmd string) string {
+	command := exec.Command("bash")
+	var b bytes.Buffer
+	command.Stdin = bytes.NewBufferString(cmd)
+	command.Stdout = &b
+	// command.Stderr = os.Stderr
 	err := command.Run()
 	if err != nil {
 		panic(err)
 	}
+
+	return b.String()
 }
