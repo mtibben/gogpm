@@ -356,7 +356,7 @@ type RepoRoot struct {
 
 // repoRootForImportPath analyzes importPath to determine the
 // version control system, and code repository to use.
-func repoRootForImportPath(importPath string) (*RepoRoot, error) {
+func RepoRootForImportPath(importPath string) (*RepoRoot, error) {
 	rr, err := repoRootForImportPathStatic(importPath, "")
 	if err == errUnknownSite {
 		rr, err = repoRootForImportDynamic(importPath)
