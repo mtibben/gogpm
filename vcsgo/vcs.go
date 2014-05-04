@@ -19,7 +19,7 @@ import (
 
 // A vcsCmd describes how to use a version control system
 // like Mercurial, Git, or Subversion.
-type vcsCmd struct {
+type VcsCmd struct {
 	name string
 	cmd  string // name of binary to invoke command
 
@@ -43,7 +43,7 @@ type tagCmd struct {
 }
 
 // vcsList lists the known version control systems
-var vcsList = []*vcsCmd{
+var vcsList = []*VcsCmd{
 	vcsHg,
 	vcsGit,
 	vcsSvn,
@@ -52,7 +52,7 @@ var vcsList = []*vcsCmd{
 
 // vcsByCmd returns the version control system for the given
 // command name (hg, git, svn, bzr).
-func vcsByCmd(cmd string) *vcsCmd {
+func vcsByCmd(cmd string) *VcsCmd {
 	for _, vcs := range vcsList {
 		if vcs.cmd == cmd {
 			return vcs
@@ -62,7 +62,7 @@ func vcsByCmd(cmd string) *vcsCmd {
 }
 
 // vcsHg describes how to use Mercurial.
-var vcsHg = &vcsCmd{
+var vcsHg = &VcsCmd{
 	name: "Mercurial",
 	cmd:  "hg",
 
@@ -86,7 +86,7 @@ var vcsHg = &vcsCmd{
 }
 
 // vcsGit describes how to use Git.
-var vcsGit = &vcsCmd{
+var vcsGit = &VcsCmd{
 	name: "Git",
 	cmd:  "git",
 
@@ -109,7 +109,7 @@ var vcsGit = &vcsCmd{
 }
 
 // vcsBzr describes how to use Bazaar.
-var vcsBzr = &vcsCmd{
+var vcsBzr = &VcsCmd{
 	name: "Bazaar",
 	cmd:  "bzr",
 
@@ -128,7 +128,7 @@ var vcsBzr = &vcsCmd{
 }
 
 // vcsSvn describes how to use Subversion.
-var vcsSvn = &vcsCmd{
+var vcsSvn = &VcsCmd{
 	name: "Subversion",
 	cmd:  "svn",
 
@@ -142,7 +142,7 @@ var vcsSvn = &vcsCmd{
 	pingCmd: "info {scheme}://{repo}",
 }
 
-func (v *vcsCmd) String() string {
+func (v *VcsCmd) String() string {
 	return v.name
 }
 
@@ -153,24 +153,24 @@ func (v *vcsCmd) String() string {
 // If an error occurs, run prints the command line and the
 // command's combined stdout+stderr to standard error.
 // Otherwise run discards the command's output.
-func (v *vcsCmd) run(dir string, cmd string, keyval ...string) error {
+func (v *VcsCmd) run(dir string, cmd string, keyval ...string) error {
 	_, err := v.run1(dir, cmd, keyval, true)
 	return err
 }
 
 // runVerboseOnly is like run but only generates error output to standard error in verbose mode.
-func (v *vcsCmd) runVerboseOnly(dir string, cmd string, keyval ...string) error {
+func (v *VcsCmd) runVerboseOnly(dir string, cmd string, keyval ...string) error {
 	_, err := v.run1(dir, cmd, keyval, false)
 	return err
 }
 
 // runOutput is like run but returns the output of the command.
-func (v *vcsCmd) runOutput(dir string, cmd string, keyval ...string) ([]byte, error) {
+func (v *VcsCmd) runOutput(dir string, cmd string, keyval ...string) ([]byte, error) {
 	return v.run1(dir, cmd, keyval, true)
 }
 
 // run1 is the generalized implementation of run and runOutput.
-func (v *vcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool) ([]byte, error) {
+func (v *VcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool) ([]byte, error) {
 	m := make(map[string]string)
 	for i := 0; i < len(keyval); i += 2 {
 		m[keyval[i]] = keyval[i+1]
@@ -211,18 +211,18 @@ func (v *vcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool)
 }
 
 // ping pings to determine scheme to use.
-func (v *vcsCmd) ping(scheme, repo string) error {
+func (v *VcsCmd) ping(scheme, repo string) error {
 	return v.runVerboseOnly(".", v.pingCmd, "scheme", scheme, "repo", repo)
 }
 
 // create creates a new copy of repo in dir.
 // The parent of dir must exist; dir must not.
-func (v *vcsCmd) create(dir, repo string) error {
+func (v *VcsCmd) create(dir, repo string) error {
 	return v.run(".", v.createCmd, "dir", dir, "repo", repo)
 }
 
 // download downloads any new changes for the repo in dir.
-func (v *vcsCmd) download(dir string) error {
+func (v *VcsCmd) download(dir string) error {
 	if err := v.fixDetachedHead(dir); err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (v *vcsCmd) download(dir string) error {
 // a Git repository we check for being on a detached head and switch to the
 // real branch, almost always called "master".
 // TODO(dsymonds): Consider removing this for Go 1.3.
-func (v *vcsCmd) fixDetachedHead(dir string) error {
+func (v *VcsCmd) fixDetachedHead(dir string) error {
 	if v != vcsGit {
 		return nil
 	}
@@ -254,7 +254,7 @@ func (v *vcsCmd) fixDetachedHead(dir string) error {
 }
 
 // tags returns the list of available tags for the repo in dir.
-func (v *vcsCmd) tags(dir string) ([]string, error) {
+func (v *VcsCmd) tags(dir string) ([]string, error) {
 	var tags []string
 	for _, tc := range v.tagCmd {
 		out, err := v.runOutput(dir, tc.cmd)
@@ -271,7 +271,7 @@ func (v *vcsCmd) tags(dir string) ([]string, error) {
 
 // tagSync syncs the repo in dir to the named tag,
 // which either is a tag returned by tags or is v.tagDefault.
-func (v *vcsCmd) tagSync(dir, tag string) error {
+func (v *VcsCmd) tagSync(dir, tag string) error {
 	if v.tagSyncCmd == "" {
 		return nil
 	}
@@ -313,7 +313,7 @@ type vcsPath struct {
 // On return, root is the import path
 // corresponding to the root of the repository
 // (thus root is a prefix of importPath).
-func vcsForDir(p *Package) (vcs *vcsCmd, root string, err error) {
+func vcsForDir(p *Package) (vcs *VcsCmd, root string, err error) {
 	// Clean and double-check that dir is in (a subdirectory of) srcRoot.
 	dir := filepath.Clean(p.Dir)
 	srcRoot := filepath.Clean(p.build.SrcRoot)
@@ -344,7 +344,7 @@ func vcsForDir(p *Package) (vcs *vcsCmd, root string, err error) {
 // repoRoot represents a version control system, a repo, and a root of
 // where to put it on disk.
 type RepoRoot struct {
-	vcs *vcsCmd
+	vcs *VcsCmd
 
 	// repo is the repository URL, including scheme
 	repo string
