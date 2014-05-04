@@ -343,7 +343,7 @@ func vcsForDir(p *Package) (vcs *vcsCmd, root string, err error) {
 
 // repoRoot represents a version control system, a repo, and a root of
 // where to put it on disk.
-type repoRoot struct {
+type RepoRoot struct {
 	vcs *vcsCmd
 
 	// repo is the repository URL, including scheme
@@ -356,7 +356,7 @@ type repoRoot struct {
 
 // repoRootForImportPath analyzes importPath to determine the
 // version control system, and code repository to use.
-func repoRootForImportPath(importPath string) (*repoRoot, error) {
+func repoRootForImportPath(importPath string) (*RepoRoot, error) {
 	rr, err := repoRootForImportPathStatic(importPath, "")
 	if err == errUnknownSite {
 		rr, err = repoRootForImportDynamic(importPath)
@@ -389,7 +389,7 @@ var errUnknownSite = errors.New("dynamic lookup required to find mapping")
 // containing its VCS type (foo.com/repo.git/dir)
 //
 // If scheme is non-empty, that scheme is forced.
-func repoRootForImportPathStatic(importPath, scheme string) (*repoRoot, error) {
+func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 	if strings.Contains(importPath, "://") {
 		return nil, fmt.Errorf("invalid import path %q", importPath)
 	}
@@ -442,7 +442,7 @@ func repoRootForImportPathStatic(importPath, scheme string) (*repoRoot, error) {
 				}
 			}
 		}
-		rr := &repoRoot{
+		rr := &RepoRoot{
 			vcs:  vcs,
 			repo: match["repo"],
 			root: match["root"],
@@ -456,7 +456,7 @@ func repoRootForImportPathStatic(importPath, scheme string) (*repoRoot, error) {
 // statically known by repoRootForImportPathStatic.
 //
 // This handles "vanity import paths" like "name.tld/pkg/foo".
-func repoRootForImportDynamic(importPath string) (*repoRoot, error) {
+func repoRootForImportDynamic(importPath string) (*RepoRoot, error) {
 	slash := strings.Index(importPath, "/")
 	if slash < 0 {
 		return nil, errors.New("import path doesn't contain a slash")
@@ -515,7 +515,7 @@ func repoRootForImportDynamic(importPath string) (*repoRoot, error) {
 	if !strings.Contains(metaImport.RepoRoot, "://") {
 		return nil, fmt.Errorf("%s: invalid repo root %q; no scheme", urlStr, metaImport.RepoRoot)
 	}
-	rr := &repoRoot{
+	rr := &RepoRoot{
 		vcs:  vcsByCmd(metaImport.VCS),
 		repo: metaImport.RepoRoot,
 		root: metaImport.Prefix,
