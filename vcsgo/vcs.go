@@ -344,14 +344,14 @@ func vcsForDir(p *Package) (vcs *VcsCmd, root string, err error) {
 // repoRoot represents a version control system, a repo, and a root of
 // where to put it on disk.
 type RepoRoot struct {
-	vcs *VcsCmd
+	Vcs *VcsCmd
 
 	// repo is the repository URL, including scheme
-	repo string
+	Repo string
 
 	// root is the import path corresponding to the root of the
 	// repository
-	root string
+	Root string
 }
 
 // repoRootForImportPath analyzes importPath to determine the
@@ -373,7 +373,7 @@ func RepoRootForImportPath(importPath string) (*RepoRoot, error) {
 		}
 	}
 
-	if err == nil && strings.Contains(importPath, "...") && strings.Contains(rr.root, "...") {
+	if err == nil && strings.Contains(importPath, "...") && strings.Contains(rr.Root, "...") {
 		// Do not allow wildcards in the repo root.
 		rr = nil
 		err = fmt.Errorf("cannot expand ... in %q", importPath)
@@ -415,11 +415,11 @@ func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 				match[name] = m[i]
 			}
 		}
-		if srv.vcs != "" {
-			match["vcs"] = expand(match, srv.vcs)
+		if srv.Vcs != "" {
+			match["vcs"] = expand(match, srv.Vcs)
 		}
-		if srv.repo != "" {
-			match["repo"] = expand(match, srv.repo)
+		if srv.Repo != "" {
+			match["repo"] = expand(match, srv.Repo)
 		}
 		if srv.check != nil {
 			if err := srv.check(match); err != nil {
@@ -520,7 +520,7 @@ func repoRootForImportDynamic(importPath string) (*RepoRoot, error) {
 		repo: metaImport.RepoRoot,
 		root: metaImport.Prefix,
 	}
-	if rr.vcs == nil {
+	if rr.Vcs == nil {
 		return nil, fmt.Errorf("%s: unknown vcs %q", urlStr, metaImport.VCS)
 	}
 	return rr, nil
