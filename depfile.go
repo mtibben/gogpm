@@ -1,15 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 )
 
-func parseDepFile() map[string]string {
+func parseDepFile() (map[string]string, error) {
 	b, err := ioutil.ReadFile(depsFile)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	deps := make(map[string]string, len(b))
@@ -20,24 +21,26 @@ func parseDepFile() map[string]string {
 		d := strings.Split(line, " ")
 
 		if len(d) != 2 {
-			panic("Couldn't parse depfile " + depsFile)
+			return nil, fmt.Errorf("Couldn't parse depfile " + depsFile)
 		}
 
 		deps[d[0]] = d[1]
 	}
 
-	return deps
+	return deps, nil
 }
 
-func appendLineToDepFile(line string) {
+func appendLineToDepFile(line string) error {
 	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer f.Close()
 
 	if _, err = f.WriteString(line + "\n"); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }

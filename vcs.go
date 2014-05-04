@@ -15,10 +15,12 @@ type vcsCmd struct {
 	tagSyncCmd   string
 }
 
-func (v *vcsCmd) LatestTag() (tag string) {
+func (v *vcsCmd) LatestTag() (tag string, err error) {
 	for _, c := range v.latestTagCmd {
-		tag = strings.TrimSpace(execCmd(c))
-		if tag != "" {
+		tag, _, err = execCmd(c)
+		tag = strings.TrimSpace(tag)
+
+		if tag != "" || err != nil {
 			break
 		}
 	}
@@ -26,8 +28,9 @@ func (v *vcsCmd) LatestTag() (tag string) {
 	return
 }
 
-func (v *vcsCmd) TagSync(tag string) {
-	execCmd(fmt.Sprintf(v.tagSyncCmd, tag))
+func (v *vcsCmd) TagSync(tag string) error {
+	_, _, err := execCmd(fmt.Sprintf(v.tagSyncCmd, tag))
+	return err
 }
 
 var vcsList = []*vcsCmd{

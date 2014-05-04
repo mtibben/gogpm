@@ -1,49 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
 
-const lockfile = "Godeps"
-
-var depsFile, workingDir string
-
-func main() {
-	// parse flags and opts
-	flag.Parse()
-	command := flag.Arg(0)
-
-	// get the working directory
-	var err error
-	workingDir, err = os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	// lock file name
-	depsFile = filepath.Clean(filepath.Join(workingDir, lockfile))
-
-	// Command Line Parsing
-	switch command {
-	case "version":
-		fmt.Println(">> gogpm 0.1 (gpm v1.2.1 equiv)")
-
-	case "bootstrap":
-		bootstrap()
-
-	case "install", "":
-		install()
-
-	default:
-		usage()
-	}
-}
-
-func usage() {
-	usage := `
+const (
+	lockfile = "Godeps"
+	usage    = `
 SYNOPSIS
 
     gogpm leverages the power of the go get command and the underlying version
@@ -74,6 +42,47 @@ USAGE
       $ gogpm help        # Prints this message
 
 `
-	fmt.Fprintf(os.Stderr, usage)
-	os.Exit(2)
+)
+
+var depsFile, workingDir string
+
+func init() {
+	log.SetPrefix(">> ")
+	log.SetFlags(0)
+}
+
+func main() {
+	// parse flags and opts
+	flag.Parse()
+	command := flag.Arg(0)
+
+	// get the working directory
+	var err error
+	workingDir, err = os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	// lock file name
+	depsFile = filepath.Clean(filepath.Join(workingDir, lockfile))
+
+	// Command Line Parsing
+	switch command {
+	case "version":
+		fmt.Println("gogpm 0.1-alpha (gpm v1.2.1 equiv)")
+
+	case "bootstrap":
+		err = bootstrap()
+
+	case "install", "":
+		err = install()
+
+	default:
+		err = errors.New(usage)
+	}
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error()+"\n")
+		os.Exit(1)
+	}
 }

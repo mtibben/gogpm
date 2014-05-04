@@ -1,19 +1,28 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 )
 
-func bootstrap() {
+func bootstrap() error {
 	if fileExists(depsFile) {
-		panic(">> A Godeps file exists within this directory.")
+		return errors.New("A Godeps file already exists within this directory")
 	}
 
-	fmt.Println(">> Installing dependencies.")
-	execCmd("go get -d")
+	log.Println("Installing dependencies")
+	_, _, err := execCmd("go get -d")
+	if err != nil {
+		return err
+	}
 
-	depString := execCmd(`go list -f '{{join .Deps "\n"}}' | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'`)
+	depString, _, err := execCmd(`go list -f '{{join .Deps "\n"}}' | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'`)
+	if err != nil {
+		return err
+	}
+
 	dependencies := strings.Split(depString, "\n")
 
 	for _, pkg := range dependencies {
@@ -22,17 +31,21 @@ func bootstrap() {
 		// If no repo file is found it means we are inside a repo's
 		// subdirectory tree, we can just ignore this package.
 		if err != nil {
-			fmt.Printf(">> Ignored %s, not top-level package.\n", pkg)
+			log.Printf("Ignored %s, not top-level package\n", pkg)
 			continue
 		}
 
-		fmt.Printf(`>> Adding package "%s" version "%s" to Godeps.`, pkg, version)
-		fmt.Println()
+		log.Printf(`Adding package "%s" version "%s" to Godeps`, pkg, version)
 		appendLineToDepFile(fmt.Sprintf("%s %s", pkg, version))
 		// Sets a given package to a given revision using
 		// the appropriate VCS.
-		setPackageToVersion(pkg, version)
+		err = setPackageToVersion(pkg, version)
+		if err != nil {
+			return err
+		}
 
 	}
-	fmt.Println(">> All Done.")
+	log.Println("All Done")
+
+	return nil
 }

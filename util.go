@@ -16,23 +16,17 @@ func dirExists(path string) bool {
 	return !os.IsNotExist(err) && fi.IsDir()
 }
 
-func execCmd(cmd string) string {
+func execCmd(cmd string) (string, string, error) {
 	command := exec.Command("bash")
-	var b bytes.Buffer
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 	command.Stdin = bytes.NewBufferString(cmd)
-	command.Stdout = &b
-	// command.Stderr = os.Stderr
+	command.Stdout = &stdout
+	command.Stderr = &stderr
 	err := command.Run()
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 
-	return b.String()
-}
-
-func mustChdir(path string) {
-	err := os.Chdir(path)
-	if err != nil {
-		panic(err)
-	}
+	return stdout.String(), stderr.String(), nil
 }
