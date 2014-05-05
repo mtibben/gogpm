@@ -7,9 +7,10 @@ import (
 	"strings"
 )
 
-type dependencies map[string]string
+// dep => version
+type dependencyMap map[string]string
 
-func readDepFile() (dependencies, error) {
+func readDepFile() (dependencyMap, error) {
 	if !fileExists(depsFile) {
 		return nil, fmt.Errorf("%s file does not exist", depsFile)
 	}
@@ -19,7 +20,7 @@ func readDepFile() (dependencies, error) {
 		return nil, err
 	}
 
-	deps := make(map[string]string, len(b))
+	deps := make(dependencyMap, len(b))
 	for _, line := range strings.Split(string(b), "\n") {
 		if line == "" {
 			continue
@@ -36,7 +37,7 @@ func readDepFile() (dependencies, error) {
 	return deps, nil
 }
 
-func writeDepFile(deps dependencies) error {
+func writeDepFile(deps dependencyMap) error {
 	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err

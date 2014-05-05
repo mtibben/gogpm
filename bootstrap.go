@@ -14,12 +14,12 @@ func bootstrap() error {
 	}
 
 	log.Println("Installing dependencies")
-	_, _, err := execCmd("go get -d")
+	_, err := execCmd("go get -d ./...")
 	if err != nil {
 		return err
 	}
 
-	depListStr, _, err := execCmd(`go list -f '{{join .Deps "\n"}}' | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'`)
+	depListStr, err := execCmd(`go list -f '{{join .Deps "\n"}}' ./... | sort | uniq | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | sort | uniq`)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func bootstrap() error {
 	depListStr = strings.TrimSpace(depListStr)
 	dependencies := strings.Split(depListStr, "\n")
 
-	deps := map[string]string{}
+	deps := dependencyMap{}
 
 	for _, importPath := range dependencies {
 		rr, err := vcs.RepoRootForImportPath(importPath)
