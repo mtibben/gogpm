@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -19,25 +18,25 @@ type VcsCmd struct {
 	name string
 	cmd  string // name of binary to invoke command
 
-	createCmd   string // command to download a fresh copy of a repository
-	downloadCmd string // command to download updates into an existing repository
+	// 	createCmd   string // command to download a fresh copy of a repository
+	// 	downloadCmd string // command to download updates into an existing repository
 
-	tagCmd         []tagCmd // commands to list tags
-	tagLookupCmd   []tagCmd // commands to lookup tags before running tagSyncCmd
-	tagSyncCmd     string   // command to sync to specific tag
-	tagSyncDefault string   // command to sync to default tag
-	tagCurrentCmd  string   // command to get the current tag/sha
+	// 	tagCmd         []tagCmd // commands to list tags
+	// 	tagLookupCmd   []tagCmd // commands to lookup tags before running tagSyncCmd
+	tagSyncCmd string // command to sync to specific tag
+	// 	tagSyncDefault string   // command to sync to default tag
+	tagCurrentCmd string // command to get the current tag/sha
 
 	scheme  []string
 	pingCmd string
 }
 
-// A tagCmd describes a command to list available tags
-// that can be passed to tagSyncCmd.
-type tagCmd struct {
-	cmd     string // command to list tags
-	pattern string // regexp to extract tags from list
-}
+// // A tagCmd describes a command to list available tags
+// // that can be passed to tagSyncCmd.
+// type tagCmd struct {
+// 	cmd     string // command to list tags
+// 	pattern string // regexp to extract tags from list
+// }
 
 // vcsList lists the known version control systems
 var vcsList = []*VcsCmd{
@@ -63,21 +62,21 @@ var VcsHg = &VcsCmd{
 	name: "Mercurial",
 	cmd:  "hg",
 
-	createCmd:   "clone -U {repo} {dir}",
-	downloadCmd: "pull",
+	// 	createCmd:   "clone -U {repo} {dir}",
+	// 	downloadCmd: "pull",
 
-	// We allow both tag and branch names as 'tags'
-	// for selecting a version.  This lets people have
-	// a go.release.r60 branch and a go1 branch
-	// and make changes in both, without constantly
-	// editing .hgtags.
-	tagCmd: []tagCmd{
-		{"tags", `^(\S+)`},
-		{"branches", `^(\S+)`},
-	},
-	tagSyncCmd:     "update -r {tag}",
-	tagSyncDefault: "update default",
-	tagCurrentCmd:  "id -i",
+	// 	// We allow both tag and branch names as 'tags'
+	// 	// for selecting a version.  This lets people have
+	// 	// a go.release.r60 branch and a go1 branch
+	// 	// and make changes in both, without constantly
+	// 	// editing .hgtags.
+	// 	tagCmd: []tagCmd{
+	// 		{"tags", `^(\S+)`},
+	// 		{"branches", `^(\S+)`},
+	// 	},
+	tagSyncCmd: "update -r {tag}",
+	// 	tagSyncDefault: "update default",
+	tagCurrentCmd: "id -i",
 
 	scheme:  []string{"https", "http", "ssh"},
 	pingCmd: "identify {scheme}://{repo}",
@@ -88,20 +87,20 @@ var VcsGit = &VcsCmd{
 	name: "Git",
 	cmd:  "git",
 
-	createCmd:   "clone {repo} {dir}",
-	downloadCmd: "pull --ff-only",
+	// 	createCmd:   "clone {repo} {dir}",
+	// 	downloadCmd: "pull --ff-only",
 
-	tagCmd: []tagCmd{
-		// tags/xxx matches a git tag named xxx
-		// origin/xxx matches a git branch named xxx on the default remote repository
-		{"show-ref", `(?:tags|origin)/(\S+)$`},
-	},
-	tagLookupCmd: []tagCmd{
-		{"show-ref tags/{tag} origin/{tag}", `((?:tags|origin)/\S+)$`},
-	},
-	tagSyncCmd:     "checkout {tag}",
-	tagSyncDefault: "checkout master",
-	tagCurrentCmd:  "rev-parse HEAD",
+	// 	tagCmd: []tagCmd{
+	// 		// tags/xxx matches a git tag named xxx
+	// 		// origin/xxx matches a git branch named xxx on the default remote repository
+	// 		{"show-ref", `(?:tags|origin)/(\S+)$`},
+	// 	},
+	// 	tagLookupCmd: []tagCmd{
+	// 		{"show-ref tags/{tag} origin/{tag}", `((?:tags|origin)/\S+)$`},
+	// 	},
+	tagSyncCmd: "checkout {tag}",
+	// 	tagSyncDefault: "checkout master",
+	tagCurrentCmd: "rev-parse HEAD",
 
 	scheme:  []string{"git", "https", "http", "git+ssh"},
 	pingCmd: "ls-remote {scheme}://{repo}",
@@ -112,16 +111,16 @@ var VcsBzr = &VcsCmd{
 	name: "Bazaar",
 	cmd:  "bzr",
 
-	createCmd: "branch {repo} {dir}",
+	// 	createCmd: "branch {repo} {dir}",
 
-	// Without --overwrite bzr will not pull tags that changed.
-	// Replace by --overwrite-tags after http://pad.lv/681792 goes in.
-	downloadCmd: "pull --overwrite",
+	// 	// Without --overwrite bzr will not pull tags that changed.
+	// 	// Replace by --overwrite-tags after http://pad.lv/681792 goes in.
+	// 	downloadCmd: "pull --overwrite",
 
-	tagCmd:         []tagCmd{{"tags", `^(\S+)`}},
-	tagSyncCmd:     "update -r {tag}",
-	tagSyncDefault: "update -r revno:-1",
-	tagCurrentCmd:  "revno",
+	// 	tagCmd:         []tagCmd{{"tags", `^(\S+)`}},
+	tagSyncCmd: "update -r {tag}",
+	// 	tagSyncDefault: "update -r revno:-1",
+	tagCurrentCmd: "revno",
 
 	scheme:  []string{"https", "http", "bzr", "bzr+ssh"},
 	pingCmd: "info {scheme}://{repo}",
@@ -132,31 +131,31 @@ var VcsSvn = &VcsCmd{
 	name: "Subversion",
 	cmd:  "svn",
 
-	createCmd:   "checkout {repo} {dir}",
-	downloadCmd: "update",
+	// 	createCmd:   "checkout {repo} {dir}",
+	// 	downloadCmd: "update",
 
-	// There is no tag command in subversion.
-	// The branch information is all in the path names.
+	// 	// There is no tag command in subversion.
+	// 	// The branch information is all in the path names.
 
 	scheme:  []string{"https", "http", "svn", "svn+ssh"},
 	pingCmd: "info {scheme}://{repo}",
 }
 
-func (v *VcsCmd) String() string {
-	return v.name
-}
+// func (v *VcsCmd) String() string {
+// 	return v.name
+// }
 
-// run runs the command line cmd in the given directory.
-// keyval is a list of key, value pairs.  run expands
-// instances of {key} in cmd into value, but only after
-// splitting cmd into individual arguments.
-// If an error occurs, run prints the command line and the
-// command's combined stdout+stderr to standard error.
-// Otherwise run discards the command's output.
-func (v *VcsCmd) run(dir string, cmd string, keyval ...string) error {
-	_, err := v.run1(dir, cmd, keyval, true)
-	return err
-}
+// // run runs the command line cmd in the given directory.
+// // keyval is a list of key, value pairs.  run expands
+// // instances of {key} in cmd into value, but only after
+// // splitting cmd into individual arguments.
+// // If an error occurs, run prints the command line and the
+// // command's combined stdout+stderr to standard error.
+// // Otherwise run discards the command's output.
+// func (v *VcsCmd) run(dir string, cmd string, keyval ...string) error {
+// 	_, err := v.run1(dir, cmd, keyval, true)
+// 	return err
+// }
 
 // runVerboseOnly is like run but only generates error output to standard error in verbose mode.
 func (v *VcsCmd) runVerboseOnly(dir string, cmd string, keyval ...string) error {
@@ -215,90 +214,90 @@ func (v *VcsCmd) ping(scheme, repo string) error {
 	return v.runVerboseOnly(".", v.pingCmd, "scheme", scheme, "repo", repo)
 }
 
-// create creates a new copy of repo in dir.
-// The parent of dir must exist; dir must not.
-func (v *VcsCmd) create(dir, repo string) error {
-	return v.run(".", v.createCmd, "dir", dir, "repo", repo)
-}
+// // create creates a new copy of repo in dir.
+// // The parent of dir must exist; dir must not.
+// func (v *VcsCmd) create(dir, repo string) error {
+// 	return v.run(".", v.createCmd, "dir", dir, "repo", repo)
+// }
 
-// download downloads any new changes for the repo in dir.
-func (v *VcsCmd) download(dir string) error {
-	if err := v.fixDetachedHead(dir); err != nil {
-		return err
-	}
-	return v.run(dir, v.downloadCmd)
-}
+// // download downloads any new changes for the repo in dir.
+// func (v *VcsCmd) download(dir string) error {
+// 	if err := v.fixDetachedHead(dir); err != nil {
+// 		return err
+// 	}
+// 	return v.run(dir, v.downloadCmd)
+// }
 
-// fixDetachedHead switches a Git repository in dir from a detached head to the master branch.
-// Go versions before 1.2 downloaded Git repositories in an unfortunate way
-// that resulted in the working tree state being on a detached head.
-// That meant the repository was not usable for normal Git operations.
-// Go 1.2 fixed that, but we can't pull into a detached head, so if this is
-// a Git repository we check for being on a detached head and switch to the
-// real branch, almost always called "master".
-// TODO(dsymonds): Consider removing this for Go 1.3.
-func (v *VcsCmd) fixDetachedHead(dir string) error {
-	if v != VcsGit {
-		return nil
-	}
+// // fixDetachedHead switches a Git repository in dir from a detached head to the master branch.
+// // Go versions before 1.2 downloaded Git repositories in an unfortunate way
+// // that resulted in the working tree state being on a detached head.
+// // That meant the repository was not usable for normal Git operations.
+// // Go 1.2 fixed that, but we can't pull into a detached head, so if this is
+// // a Git repository we check for being on a detached head and switch to the
+// // real branch, almost always called "master".
+// // TODO(dsymonds): Consider removing this for Go 1.3.
+// func (v *VcsCmd) fixDetachedHead(dir string) error {
+// 	if v != VcsGit {
+// 		return nil
+// 	}
 
-	// "git symbolic-ref HEAD" succeeds iff we are not on a detached head.
-	if err := v.runVerboseOnly(dir, "symbolic-ref HEAD"); err == nil {
-		// not on a detached head
-		return nil
-	}
-	if buildV {
-		log.Printf("%s on detached head; repairing", dir)
-	}
-	return v.run(dir, "checkout master")
-}
+// 	// "git symbolic-ref HEAD" succeeds iff we are not on a detached head.
+// 	if err := v.runVerboseOnly(dir, "symbolic-ref HEAD"); err == nil {
+// 		// not on a detached head
+// 		return nil
+// 	}
+// 	if buildV {
+// 		log.Printf("%s on detached head; repairing", dir)
+// 	}
+// 	return v.run(dir, "checkout master")
+// }
 
 func (v *VcsCmd) CurrentTag(dir string) (string, error) {
 	tag, err := v.runOutput(dir, v.tagCurrentCmd)
 	return strings.TrimSpace(string(tag)), err
 }
 
-// tags returns the list of available tags for the repo in dir.
-func (v *VcsCmd) tags(dir string) ([]string, error) {
-	var tags []string
-	for _, tc := range v.tagCmd {
-		out, err := v.runOutput(dir, tc.cmd)
-		if err != nil {
-			return nil, err
-		}
-		re := regexp.MustCompile(`(?m-s)` + tc.pattern)
-		for _, m := range re.FindAllStringSubmatch(string(out), -1) {
-			tags = append(tags, m[1])
-		}
-	}
-	return tags, nil
-}
+// // tags returns the list of available tags for the repo in dir.
+// func (v *VcsCmd) tags(dir string) ([]string, error) {
+// 	var tags []string
+// 	for _, tc := range v.tagCmd {
+// 		out, err := v.runOutput(dir, tc.cmd)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		re := regexp.MustCompile(`(?m-s)` + tc.pattern)
+// 		for _, m := range re.FindAllStringSubmatch(string(out), -1) {
+// 			tags = append(tags, m[1])
+// 		}
+// 	}
+// 	return tags, nil
+// }
 
-// tagSync syncs the repo in dir to the named tag,
-// which either is a tag returned by tags or is v.tagDefault.
-func (v *VcsCmd) TagSync(dir, tag string) error {
-	if v.tagSyncCmd == "" {
-		return nil
-	}
-	if tag != "" {
-		for _, tc := range v.tagLookupCmd {
-			out, err := v.runOutput(dir, tc.cmd, "tag", tag)
-			if err != nil {
-				return err
-			}
-			re := regexp.MustCompile(`(?m-s)` + tc.pattern)
-			m := re.FindStringSubmatch(string(out))
-			if len(m) > 1 {
-				tag = m[1]
-				break
-			}
-		}
-	}
-	if tag == "" && v.tagSyncDefault != "" {
-		return v.run(dir, v.tagSyncDefault)
-	}
-	return v.run(dir, v.tagSyncCmd, "tag", tag)
-}
+// // tagSync syncs the repo in dir to the named tag,
+// // which either is a tag returned by tags or is v.tagDefault.
+// func (v *VcsCmd) TagSync(dir, tag string) error {
+// 	if v.tagSyncCmd == "" {
+// 		return nil
+// 	}
+// 	if tag != "" {
+// 		for _, tc := range v.tagLookupCmd {
+// 			out, err := v.runOutput(dir, tc.cmd, "tag", tag)
+// 			if err != nil {
+// 				return err
+// 			}
+// 			re := regexp.MustCompile(`(?m-s)` + tc.pattern)
+// 			m := re.FindStringSubmatch(string(out))
+// 			if len(m) > 1 {
+// 				tag = m[1]
+// 				break
+// 			}
+// 		}
+// 	}
+// 	if tag == "" && v.tagSyncDefault != "" {
+// 		return v.run(dir, v.tagSyncDefault)
+// 	}
+// 	return v.run(dir, v.tagSyncCmd, "tag", tag)
+// }
 
 func (v *VcsCmd) Checkout(dir, tag string) error {
 	_, err := v.runOutput(dir, v.tagSyncCmd, "tag", tag)
@@ -319,38 +318,38 @@ type vcsPath struct {
 	regexp *regexp.Regexp // cached compiled form of re
 }
 
-// vcsForDir inspects dir and its parents to determine the
-// version control system and code repository to use.
-// On return, root is the import path
-// corresponding to the root of the repository
-// (thus root is a prefix of importPath).
-func vcsForDir(p *Package) (vcs *VcsCmd, root string, err error) {
-	// Clean and double-check that dir is in (a subdirectory of) srcRoot.
-	dir := filepath.Clean(p.Dir)
-	srcRoot := filepath.Clean(p.build.SrcRoot)
-	if len(dir) <= len(srcRoot) || dir[len(srcRoot)] != filepath.Separator {
-		return nil, "", fmt.Errorf("directory %q is outside source root %q", dir, srcRoot)
-	}
+// // vcsForDir inspects dir and its parents to determine the
+// // version control system and code repository to use.
+// // On return, root is the import path
+// // corresponding to the root of the repository
+// // (thus root is a prefix of importPath).
+// func vcsForDir(p *Package) (vcs *VcsCmd, root string, err error) {
+// 	// Clean and double-check that dir is in (a subdirectory of) srcRoot.
+// 	dir := filepath.Clean(p.Dir)
+// 	srcRoot := filepath.Clean(p.build.SrcRoot)
+// 	if len(dir) <= len(srcRoot) || dir[len(srcRoot)] != filepath.Separator {
+// 		return nil, "", fmt.Errorf("directory %q is outside source root %q", dir, srcRoot)
+// 	}
 
-	origDir := dir
-	for len(dir) > len(srcRoot) {
-		for _, vcs := range vcsList {
-			if fi, err := os.Stat(filepath.Join(dir, "."+vcs.cmd)); err == nil && fi.IsDir() {
-				return vcs, dir[len(srcRoot)+1:], nil
-			}
-		}
+// 	origDir := dir
+// 	for len(dir) > len(srcRoot) {
+// 		for _, vcs := range vcsList {
+// 			if fi, err := os.Stat(filepath.Join(dir, "."+vcs.cmd)); err == nil && fi.IsDir() {
+// 				return vcs, dir[len(srcRoot)+1:], nil
+// 			}
+// 		}
 
-		// Move to parent.
-		ndir := filepath.Dir(dir)
-		if len(ndir) >= len(dir) {
-			// Shouldn't happen, but just in case, stop.
-			break
-		}
-		dir = ndir
-	}
+// 		// Move to parent.
+// 		ndir := filepath.Dir(dir)
+// 		if len(ndir) >= len(dir) {
+// 			// Shouldn't happen, but just in case, stop.
+// 			break
+// 		}
+// 		dir = ndir
+// 	}
 
-	return nil, "", fmt.Errorf("directory %q is not using a known version control system", origDir)
-}
+// 	return nil, "", fmt.Errorf("directory %q is not using a known version control system", origDir)
+// }
 
 // repoRoot represents a version control system, a repo, and a root of
 // where to put it on disk.
