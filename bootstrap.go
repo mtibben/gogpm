@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/mtibben/gogpm/vcs"
 )
 
 func bootstrap() error {
@@ -18,33 +20,44 @@ func bootstrap() error {
 		return err
 	}
 
-	depString, _, err := execCmd(`go list -f '{{join .Deps "\n"}}' | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'`)
+	depListStr, _, err := execCmd(`go list -f '{{join .Deps "\n"}}' | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'`)
 	if err != nil {
 		return err
 	}
 
-	dependencies := strings.Split(depString, "\n")
+	depListStr = strings.TrimSpace(depListStr)
+	dependencies := strings.Split(depListStr, "\n")
 
-	for _, pkg := range dependencies {
-		version, err := findLastTagOrHEAD(pkg)
+	deps := map[string]string{}
 
-		// If no repo file is found it means we are inside a repo's
-		// subdirectory tree, we can just ignore this package.
-		if err != nil {
-			log.Printf("Ignored %s, not top-level package\n", pkg)
+	for _, importPath := range dependencies {
+		rr, err := vcs.RepoRootForImportPath(importPath)
+		rootVcsPath := rr.Root
+
+		if _, exists := deps[rootVcsPath]; exists {
 			continue
 		}
 
-		log.Printf(`Adding package "%s" version "%s" to Godeps`, pkg, version)
-		appendLineToDepFile(fmt.Sprintf("%s %s", pkg, version))
-		// Sets a given package to a given revision using
-		// the appropriate VCS.
-		err = setPackageToVersion(pkg, version)
+		absoluteVcsPath := installPath(rootVcsPath)
+
+		if absoluteVcsPath == workingDir {
+			continue
+		}
+
+		version, err := rr.Vcs.CurrentTag(absoluteVcsPath)
 		if err != nil {
 			return err
 		}
 
+		log.Printf(`Adding package "%s" version "%s"`, rootVcsPath, version)
+		deps[rootVcsPath] = version
 	}
+
+	log.Printf("Writing Godeps file")
+	for dep, version := range deps {
+		appendLineToDepFile(fmt.Sprintf("%s %s", dep, version))
+	}
+
 	log.Println("All Done")
 
 	return nil

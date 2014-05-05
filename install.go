@@ -26,7 +26,7 @@ func install() error {
 
 	for pkg, version := range pkgs {
 		log.Printf("Getting %s\n", pkg)
-		_, _, err = execCmd(fmt.Sprintf(`go get -u -d "%s"`, pkg))
+		_, _, err := execCmd(fmt.Sprintf(`go get -u -d "%s/..."`, pkg))
 		if err != nil {
 			return err
 		}

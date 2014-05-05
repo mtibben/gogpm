@@ -4,44 +4,22 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/mtibben/gogpm/vcs"
 )
 
-func setPackageToVersion(pkg, version string) error {
-	dir := installPath(pkg)
+func setPackageToVersion(importpath, version string) error {
+	rr, err := vcs.RepoRootForImportPath(importpath)
 
-	err := os.Chdir(dir)
 	if err != nil {
-		return err
-	}
-
-	vcs, err := vcsForDir(dir)
-	if err != nil {
-		log.Printf("Ignored %s, not top-level package\n", pkg)
+		log.Printf("Ignored %s, not top-level package\n", importpath)
 		return nil
 	} else {
-		log.Printf("Setting %s to version %s\n", pkg, version)
-		return vcs.TagSync(version)
+		log.Printf("Setting %s to version %s\n", importpath, version)
+		return rr.Vcs.Checkout(installPath(rr.Root), version)
 	}
 }
 
-func installPath(pkg string) string {
-	return filepath.Clean(os.Getenv("GOPATH") + "/src/" + pkg)
-}
-
-// Returns the latest tag (or, failing that latest revision)
-// for an installed package.
-func findLastTagOrHEAD(pkg string) (string, error) {
-	dir := installPath(pkg)
-
-	err := os.Chdir(dir)
-	if err != nil {
-		return "", err
-	}
-
-	vcs, err := vcsForDir(dir)
-	if err != nil {
-		return "", err
-	}
-
-	return vcs.LatestTag()
+func installPath(importpath string) string {
+	return filepath.Clean(filepath.Join(os.Getenv("GOPATH"), "src", importpath))
 }

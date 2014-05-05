@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	version  = "gogpm 0.1-alpha (gpm v1.2.1 equiv)"
 	lockfile = "Godeps"
 	usage    = `
 SYNOPSIS
@@ -60,16 +61,18 @@ func main() {
 	var err error
 	workingDir, err = os.Getwd()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, err.Error()+"\n")
+		os.Exit(1)
 	}
+	workingDir = filepath.Clean(workingDir)
 
-	// lock file name
-	depsFile = filepath.Clean(filepath.Join(workingDir, lockfile))
+	// lockfile name
+	depsFile = filepath.Join(workingDir, lockfile)
 
 	// Command Line Parsing
 	switch command {
 	case "version":
-		fmt.Println("gogpm 0.1-alpha (gpm v1.2.1 equiv)")
+		fmt.Println(version)
 
 	case "bootstrap":
 		err = bootstrap()

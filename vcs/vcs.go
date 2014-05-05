@@ -1,8 +1,4 @@
-// Copyright 2012 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-package main
+package vcs
 
 import (
 	"bytes"
@@ -30,6 +26,7 @@ type VcsCmd struct {
 	tagLookupCmd   []tagCmd // commands to lookup tags before running tagSyncCmd
 	tagSyncCmd     string   // command to sync to specific tag
 	tagSyncDefault string   // command to sync to default tag
+	tagCurrentCmd  string   // command to get the current tag/sha
 
 	scheme  []string
 	pingCmd string
@@ -44,10 +41,10 @@ type tagCmd struct {
 
 // vcsList lists the known version control systems
 var vcsList = []*VcsCmd{
-	vcsHg,
-	vcsGit,
-	vcsSvn,
-	vcsBzr,
+	VcsHg,
+	VcsGit,
+	VcsSvn,
+	VcsBzr,
 }
 
 // vcsByCmd returns the version control system for the given
@@ -61,8 +58,8 @@ func vcsByCmd(cmd string) *VcsCmd {
 	return nil
 }
 
-// vcsHg describes how to use Mercurial.
-var vcsHg = &VcsCmd{
+// VcsHg describes how to use Mercurial.
+var VcsHg = &VcsCmd{
 	name: "Mercurial",
 	cmd:  "hg",
 
@@ -80,13 +77,14 @@ var vcsHg = &VcsCmd{
 	},
 	tagSyncCmd:     "update -r {tag}",
 	tagSyncDefault: "update default",
+	tagCurrentCmd:  "id -i",
 
 	scheme:  []string{"https", "http", "ssh"},
 	pingCmd: "identify {scheme}://{repo}",
 }
 
-// vcsGit describes how to use Git.
-var vcsGit = &VcsCmd{
+// VcsGit describes how to use Git.
+var VcsGit = &VcsCmd{
 	name: "Git",
 	cmd:  "git",
 
@@ -103,13 +101,14 @@ var vcsGit = &VcsCmd{
 	},
 	tagSyncCmd:     "checkout {tag}",
 	tagSyncDefault: "checkout master",
+	tagCurrentCmd:  "rev-parse HEAD",
 
 	scheme:  []string{"git", "https", "http", "git+ssh"},
 	pingCmd: "ls-remote {scheme}://{repo}",
 }
 
-// vcsBzr describes how to use Bazaar.
-var vcsBzr = &VcsCmd{
+// VcsBzr describes how to use Bazaar.
+var VcsBzr = &VcsCmd{
 	name: "Bazaar",
 	cmd:  "bzr",
 
@@ -122,13 +121,14 @@ var vcsBzr = &VcsCmd{
 	tagCmd:         []tagCmd{{"tags", `^(\S+)`}},
 	tagSyncCmd:     "update -r {tag}",
 	tagSyncDefault: "update -r revno:-1",
+	tagCurrentCmd:  "revno",
 
 	scheme:  []string{"https", "http", "bzr", "bzr+ssh"},
 	pingCmd: "info {scheme}://{repo}",
 }
 
-// vcsSvn describes how to use Subversion.
-var vcsSvn = &VcsCmd{
+// VcsSvn describes how to use Subversion.
+var VcsSvn = &VcsCmd{
 	name: "Subversion",
 	cmd:  "svn",
 
@@ -238,7 +238,7 @@ func (v *VcsCmd) download(dir string) error {
 // real branch, almost always called "master".
 // TODO(dsymonds): Consider removing this for Go 1.3.
 func (v *VcsCmd) fixDetachedHead(dir string) error {
-	if v != vcsGit {
+	if v != VcsGit {
 		return nil
 	}
 
@@ -251,6 +251,11 @@ func (v *VcsCmd) fixDetachedHead(dir string) error {
 		log.Printf("%s on detached head; repairing", dir)
 	}
 	return v.run(dir, "checkout master")
+}
+
+func (v *VcsCmd) CurrentTag(dir string) (string, error) {
+	tag, err := v.runOutput(dir, v.tagCurrentCmd)
+	return strings.TrimSpace(string(tag)), err
 }
 
 // tags returns the list of available tags for the repo in dir.
@@ -271,7 +276,7 @@ func (v *VcsCmd) tags(dir string) ([]string, error) {
 
 // tagSync syncs the repo in dir to the named tag,
 // which either is a tag returned by tags or is v.tagDefault.
-func (v *VcsCmd) tagSync(dir, tag string) error {
+func (v *VcsCmd) TagSync(dir, tag string) error {
 	if v.tagSyncCmd == "" {
 		return nil
 	}
@@ -293,6 +298,12 @@ func (v *VcsCmd) tagSync(dir, tag string) error {
 		return v.run(dir, v.tagSyncDefault)
 	}
 	return v.run(dir, v.tagSyncCmd, "tag", tag)
+}
+
+func (v *VcsCmd) Checkout(dir, tag string) error {
+	_, err := v.runOutput(dir, v.tagSyncCmd, "tag", tag)
+	// log.Println(string(out))
+	return err
 }
 
 // A vcsPath describes how to convert an import path into a
@@ -415,11 +426,11 @@ func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 				match[name] = m[i]
 			}
 		}
-		if srv.Vcs != "" {
-			match["vcs"] = expand(match, srv.Vcs)
+		if srv.vcs != "" {
+			match["vcs"] = expand(match, srv.vcs)
 		}
-		if srv.Repo != "" {
-			match["repo"] = expand(match, srv.Repo)
+		if srv.repo != "" {
+			match["repo"] = expand(match, srv.repo)
 		}
 		if srv.check != nil {
 			if err := srv.check(match); err != nil {
@@ -443,9 +454,9 @@ func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 			}
 		}
 		rr := &RepoRoot{
-			vcs:  vcs,
-			repo: match["repo"],
-			root: match["root"],
+			Vcs:  vcs,
+			Repo: match["repo"],
+			Root: match["root"],
 		}
 		return rr, nil
 	}
@@ -516,9 +527,9 @@ func repoRootForImportDynamic(importPath string) (*RepoRoot, error) {
 		return nil, fmt.Errorf("%s: invalid repo root %q; no scheme", urlStr, metaImport.RepoRoot)
 	}
 	rr := &RepoRoot{
-		vcs:  vcsByCmd(metaImport.VCS),
-		repo: metaImport.RepoRoot,
-		root: metaImport.Prefix,
+		Vcs:  vcsByCmd(metaImport.VCS),
+		Repo: metaImport.RepoRoot,
+		Root: metaImport.Prefix,
 	}
 	if rr.Vcs == nil {
 		return nil, fmt.Errorf("%s: unknown vcs %q", urlStr, metaImport.VCS)
@@ -654,7 +665,7 @@ func googleCodeVCS(match map[string]string) error {
 		if vcs := vcsByCmd(string(m[1])); vcs != nil {
 			// Subversion requires the old URLs.
 			// TODO: Test.
-			if vcs == vcsSvn {
+			if vcs == VcsSvn {
 				if match["subrepo"] != "" {
 					return fmt.Errorf("sub-repositories not supported in Google Code Subversion projects")
 				}
