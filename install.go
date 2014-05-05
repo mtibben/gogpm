@@ -22,7 +22,7 @@ func install() error {
 
 	for dep, version := range deps {
 		log.Printf("Getting %s\n", dep)
-		out, err := execCmd(fmt.Sprintf(`go get -u -d "%s/..."`, dep))
+		out, err := execCmd(fmt.Sprintf(`go get -d "%s/..."`, dep))
 		if err != nil {
 			log.Println(out)
 			return err
