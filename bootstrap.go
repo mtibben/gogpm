@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 
@@ -54,8 +53,9 @@ func bootstrap() error {
 	}
 
 	log.Printf("Writing Godeps file")
-	for dep, version := range deps {
-		appendLineToDepFile(fmt.Sprintf("%s %s", dep, version))
+	err = writeDepFile(deps)
+	if err != nil {
+		return err
 	}
 
 	log.Println("All Done")

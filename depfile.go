@@ -7,7 +7,13 @@ import (
 	"strings"
 )
 
-func parseDepFile() (map[string]string, error) {
+type dependencies map[string]string
+
+func readDepFile() (dependencies, error) {
+	if !fileExists(depsFile) {
+		return nil, fmt.Errorf("%s file does not exist", depsFile)
+	}
+
 	b, err := ioutil.ReadFile(depsFile)
 	if err != nil {
 		return nil, err
@@ -30,17 +36,19 @@ func parseDepFile() (map[string]string, error) {
 	return deps, nil
 }
 
-func appendLineToDepFile(line string) error {
+func writeDepFile(deps dependencies) error {
 	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
-	if _, err = f.WriteString(line + "\n"); err != nil {
-		return err
-	}
+	for dep, version := range deps {
+		line := fmt.Sprintf("%s %s", dep, version)
 
+		if _, err = f.WriteString(line + "\n"); err != nil {
+			return err
+		}
+	}
 	return nil
 }

@@ -10,28 +10,24 @@ import (
 // Iterates over Godep file dependencies and sets
 // the specified version on each of them.
 func install() error {
-	if !fileExists(depsFile) {
-		return fmt.Errorf("%s file does not exist", depsFile)
-	}
-
-	_, err := exec.LookPath("go")
-	if err != nil {
-		return errors.New("Go is currently not installed or in your PATH\n")
-	}
-
-	pkgs, err := parseDepFile()
+	deps, err := readDepFile()
 	if err != nil {
 		return err
 	}
 
-	for pkg, version := range pkgs {
-		log.Printf("Getting %s\n", pkg)
-		_, _, err := execCmd(fmt.Sprintf(`go get -u -d "%s/..."`, pkg))
+	_, err = exec.LookPath("go")
+	if err != nil {
+		return errors.New("Go is currently not installed or in your PATH\n")
+	}
+
+	for dep, version := range deps {
+		log.Printf("Getting %s\n", dep)
+		_, _, err := execCmd(fmt.Sprintf(`go get -u -d "%s/..."`, dep))
 		if err != nil {
 			return err
 		}
 
-		err = setPackageToVersion(pkg, version)
+		err = setPackageToVersion(dep, version)
 		if err != nil {
 			return err
 		}
