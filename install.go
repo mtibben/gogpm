@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+
+	"github.com/mtibben/gogpm/vcs"
 )
 
 // Iterates over Godep file dependencies and sets
@@ -22,7 +24,18 @@ func install() error {
 
 	for dep, version := range deps {
 		log.Printf("Getting %s\n", dep)
-		out, err := execCmd(fmt.Sprintf(`go get -d "%s/..."`, dep))
+
+		update := ""
+		rr, err := vcs.RepoRootForImportPath(dep)
+		if err == nil {
+			absoluteVcsPath := installPath(rr.Root)
+			cur, _ := rr.Vcs.CurrentTag(absoluteVcsPath)
+			if cur != version {
+				update = "-u"
+			}
+		}
+
+		out, err := execCmd(fmt.Sprintf(`go get -d %s "%s/..."`, update, dep))
 		if err != nil {
 			log.Println(out)
 			return err
