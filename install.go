@@ -22,28 +22,28 @@ func install() error {
 		return errors.New("Go is currently not installed or in your PATH\n")
 	}
 
-	for dep, version := range deps {
-		log.Printf("Getting %s\n", dep)
-
-		update := ""
+	for dep, wantedVersion := range deps {
+		curVersion := ""
 		rr, err := vcs.RepoRootForImportPath(dep)
 		if err == nil {
 			absoluteVcsPath := installPath(rr.Root)
-			cur, _ := rr.Vcs.CurrentTag(absoluteVcsPath)
-			if cur != version {
-				update = "-u"
+			curVersion, _ = rr.Vcs.CurrentTag(absoluteVcsPath)
+		}
+
+		if curVersion == wantedVersion {
+			log.Printf("Checked %s\n", dep)
+		} else {
+			log.Printf("Getting %s\n", dep)
+			out, err := execCmd(fmt.Sprintf(`go get -d -u "%s/..."`, dep))
+			if err != nil {
+				log.Println(out)
+				return err
 			}
-		}
 
-		out, err := execCmd(fmt.Sprintf(`go get -d %s "%s/..."`, update, dep))
-		if err != nil {
-			log.Println(out)
-			return err
-		}
-
-		err = setPackageToVersion(dep, version)
-		if err != nil {
-			return err
+			err = setPackageToVersion(dep, wantedVersion)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
