@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -38,13 +39,28 @@ func readDepFile() (dependencyMap, error) {
 }
 
 func writeDepFile(deps dependencyMap) error {
+
+	// sort the dep paths
+	klen := 0
+	var keys []string
+	for k := range deps {
+		keys = append(keys, k)
+		if len(k) > klen {
+			klen = len(k)
+		}
+	}
+	sort.Strings(keys)
+
 	f, err := os.OpenFile(depsFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	for dep, version := range deps {
+	for _, dep := range keys {
+		version := deps[dep]
+
+		// line := fmt.Sprintf("%-[3]*[1]s %[2]s", dep, version, klen+2)
 		line := fmt.Sprintf("%s %s", dep, version)
 
 		if _, err = f.WriteString(line + "\n"); err != nil {

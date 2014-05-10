@@ -30,17 +30,16 @@ SYNOPSIS
     github.com/nu7hatch/gotrail         2eb79d1f03ab24bacbc32b15b75769880629a865
 
 USAGE
-      $ gogpm             # Same as 'install'.
+      $ gogpm bootstrap [packages]   # Downloads all external top-level packages required by
+                                     # your application and generates a Godeps file with their
+                                     # latest tags or revisions.
 
-      $ gogpm install     # Parses the Godeps file, installs dependencies and sets
-                          # them to the appropriate version.
+      $ gogpm install                # Parses the Godeps file, installs dependencies and sets
+                                     # them to the appropriate version.
 
-      $ gogpm bootstrap   # Downloads all external top-level packages required by
-                          # your application and generates a Godeps file with their
-                          # latest tags or revisions.
+      $ gogpm version                # Outputs version information
 
-      $ gogpm version     # Outputs version information
-      $ gogpm help        # Prints this message
+      $ gogpm help                   # Prints this message
 
 `
 )
@@ -75,7 +74,8 @@ func main() {
 		fmt.Println(version)
 
 	case "bootstrap":
-		err = bootstrap()
+		args := flag.Args()
+		err = bootstrap(args[1:])
 
 	case "install", "":
 		err = install()
