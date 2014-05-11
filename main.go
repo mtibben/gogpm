@@ -28,19 +28,20 @@ from its version control system, an example Godeps file looks like this:
     github.com/replicon/fast-archiver   v1.02   #This is another comment!
     github.com/nu7hatch/gotrail         2eb79d1f03ab24bacbc32b15b75769880629a865
 
+
 Usage:
 
-      $ gogpm bootstrap [packages]   # Downloads all top-level packages required by the listed
-                                     # import paths and generates a Godeps file with their
-                                     # latest tags or revisions.
-                                     # For more about specifying packages, see 'go help packages'.
+    $ gogpm bootstrap [packages]    # Downloads all top-level packages required by the listed
+                                    # import paths and generates a Godeps file with their
+                                    # latest tags or revisions.
+                                    # For more about specifying packages, see 'go help packages'.
 
-      $ gogpm install                # Parses the Godeps file, installs dependencies and sets
-                                     # them to the appropriate version.
+    $ gogpm install                 # Parses the Godeps file, installs dependencies and sets
+                                    # them to the appropriate version.
 
-      $ gogpm version                # Outputs version information
+    $ gogpm version                 # Outputs version information
 
-      $ gogpm help                   # Prints this message
+    $ gogpm help                    # Prints this message
 
 `
 )
@@ -48,17 +49,12 @@ Usage:
 var depsFile, workingDir string
 
 func init() {
+	var err error
+
 	log.SetPrefix(">> ")
 	log.SetFlags(0)
-}
-
-func main() {
-	// parse flags and opts
-	flag.Parse()
-	command := flag.Arg(0)
 
 	// get the working directory
-	var err error
 	workingDir, err = os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error()+"\n")
@@ -67,6 +63,14 @@ func main() {
 
 	// lockfile name
 	depsFile = filepath.Join(workingDir, lockfileName)
+}
+
+func main() {
+	var err error
+
+	// parse flags and opts
+	flag.Parse()
+	command := flag.Arg(0)
 
 	// Command Line Parsing
 	switch command {

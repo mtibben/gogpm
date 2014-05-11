@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -66,34 +67,37 @@ func bootstrap(packages []string) error {
 		}
 
 		// get the repo for the import path
-		rr, err := vcs.RepoRootForImportPath(importPath)
+		pkg, err := vcs.PackageFromImportPath(importPath)
 		if err != nil {
 			return err
 		}
-
-		rootVcsPath := rr.Root
 
 		// if dep has already been found
-		if _, exists := deps[rootVcsPath]; exists {
+		if _, exists := deps[pkg.RootImportPath()]; exists {
 			continue
 		}
-
-		// find the directory location of the repo
-		absoluteVcsPath := installPath(rootVcsPath)
 
 		// if the dep is the directory we're working from
-		if absoluteVcsPath == workingDir {
+		pp, err := filepath.Abs(pkg.Path())
+		if err != nil {
+			return err
+		}
+		wd, _ := filepath.Abs(workingDir)
+		if err != nil {
+			return err
+		}
+		if pp == wd {
 			continue
 		}
 
-		// current version of repo
-		version, err := rr.Vcs.CurrentTag(absoluteVcsPath)
+		// current revision of repo
+		version, err := pkg.CurrentRevision()
 		if err != nil {
 			return err
 		}
 
-		log.Printf(`Adding package "%s" version "%s"`, rootVcsPath, version)
-		deps[rootVcsPath] = version
+		log.Printf(`Adding package "%s" version "%s"`, pkg.RootImportPath(), version)
+		deps[pkg.RootImportPath()] = version
 	}
 
 	log.Printf("Writing Godeps file")

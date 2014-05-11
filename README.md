@@ -42,5 +42,4 @@ $ gpm install
 ```
 
 ## TODO:
- * create a fascade for vcs
  * prefer tags rather than revisions

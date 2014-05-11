@@ -16,11 +16,13 @@ func install() error {
 
 	for dep, wantedVersion := range deps {
 		curVersion := ""
-		rr, err := vcs.RepoRootForImportPath(dep)
-		if err == nil {
-			absoluteVcsPath := installPath(rr.Root)
-			curVersion, _ = rr.Vcs.CurrentTag(absoluteVcsPath)
+
+		pkg, err := vcs.PackageFromImportPath(dep)
+		if err != nil {
+			return err
 		}
+
+		curVersion, _ = pkg.CurrentRevision()
 
 		if curVersion == wantedVersion {
 			log.Printf("Checked %s\n", dep)
@@ -31,7 +33,7 @@ func install() error {
 				return err
 			}
 
-			err = setPackageToVersion(dep, wantedVersion)
+			err = pkg.SetRevision(wantedVersion)
 			if err != nil {
 				return err
 			}
