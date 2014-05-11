@@ -44,7 +44,7 @@ func readDepFile() (dependencyMap, error) {
 		d := strings.Fields(line)
 
 		if len(d) != 2 {
-			return nil, fmt.Errorf("Couldn't parse line %d of depfile %s", i, depsFile)
+			return nil, fmt.Errorf("Couldn't parse line %d of depfile %s", i+1, depsFile)
 		}
 
 		deps[d[0]] = d[1]
@@ -75,7 +75,7 @@ func writeDepFile(deps dependencyMap) error {
 	for _, dep := range keys {
 		version := deps[dep]
 
-		line := fmt.Sprintf("%-[3]*[1]s %[2]s", dep, version, klen+2)
+		line := fmt.Sprintf("%-[3]*[1]s %[2]s", dep, version, klen+3)
 
 		if _, err = f.WriteString(line + "\n"); err != nil {
 			return err

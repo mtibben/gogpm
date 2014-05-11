@@ -26,7 +26,7 @@ func install() error {
 			log.Printf("Checked %s\n", dep)
 		} else {
 			log.Printf("Getting %s\n", dep)
-			out, err := execCmd("go", "get", "-d", "-u", dep+"/...")
+			_, err := execCmd("go", "get", "-d", "-u", dep+"/...")
 			if err != nil {
 				return err
 			}

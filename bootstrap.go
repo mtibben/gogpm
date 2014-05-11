@@ -25,7 +25,7 @@ func uniq(set []string) (uniqSet []string) {
 	return uniqSet
 }
 
-func bootstrap(pgs []string) error {
+func bootstrap(packages []string) error {
 
 	// check if Godeps already exists
 	if depfileExists() {
@@ -35,14 +35,14 @@ func bootstrap(pgs []string) error {
 	log.Println("Installing dependencies")
 
 	// go get dependencies if they're not already present (without updating)
-	_, err := execCmd("go", append([]string{"get", "-d"}, pgs...)...)
+	_, err := execCmd("go", append([]string{"get", "-d"}, packages...)...)
 	if err != nil {
 		return err
 	}
 
 	// get a list of dependencies for the packages, including test dependencies
 	tmpl := fmt.Sprintf(`{{ join .Deps "\n" }}%s{{ join .TestImports "\n" }}`, "\n")
-	depListStr, err := execCmd("go", append([]string{"list", "-f", tmpl}, pgs...)...)
+	depListStr, err := execCmd("go", append([]string{"list", "-f", tmpl}, packages...)...)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func bootstrap(pgs []string) error {
 	}
 
 	dependencies := uniq(strings.Split(strings.TrimSpace(depListStr), "\n"))
-	dependencies = append(dependencies, pgs...)
+	dependencies = append(dependencies, packages...)
 
 	deps := dependencyMap{}
 

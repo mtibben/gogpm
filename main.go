@@ -10,18 +10,17 @@ import (
 )
 
 const (
-	version  = "gogpm 0.1-alpha (gpm v1.2.1 equiv)"
-	lockfile = "Godeps"
-	usage    = `
-SYNOPSIS
+	version      = "gogpm 1.0-pre (gpm v1.2.1 equiv)"
+	lockfileName = "Godeps"
+	usage        = `gogpm is a tool for managing package dependency versions
 
-    gogpm leverages the power of the go get command and the underlying version
-    control systems used by it to set your Go dependencies to desired versions,
-    thus allowing easily reproducible builds in your Go projects.
+gogpm leverages the power of the go get command and the underlying version
+control systems used by it to set your Go dependencies to desired versions,
+thus allowing easily reproducible builds in your Go projects.
 
-    A Godeps file in the root of your Go application is expected containing
-    the import paths of your packages and a specific tag or commit hash
-    from its version control system, an example Godeps file looks like this:
+A Godeps file in the root of your Go application is expected containing
+the import paths of your packages and a specific tag or commit hash
+from its version control system, an example Godeps file looks like this:
 
     $ cat Godeps
     # This is a comment
@@ -29,10 +28,12 @@ SYNOPSIS
     github.com/replicon/fast-archiver   v1.02   #This is another comment!
     github.com/nu7hatch/gotrail         2eb79d1f03ab24bacbc32b15b75769880629a865
 
-USAGE
-      $ gogpm bootstrap [packages]   # Downloads all external top-level packages required by
-                                     # your application and generates a Godeps file with their
+Usage:
+
+      $ gogpm bootstrap [packages]   # Downloads all top-level packages required by the listed
+                                     # import paths and generates a Godeps file with their
                                      # latest tags or revisions.
+                                     # For more about specifying packages, see 'go help packages'.
 
       $ gogpm install                # Parses the Godeps file, installs dependencies and sets
                                      # them to the appropriate version.
@@ -63,13 +64,13 @@ func main() {
 		fmt.Fprintf(os.Stderr, err.Error()+"\n")
 		os.Exit(1)
 	}
-	workingDir = filepath.Clean(workingDir)
 
 	// lockfile name
-	depsFile = filepath.Join(workingDir, lockfile)
+	depsFile = filepath.Join(workingDir, lockfileName)
 
 	// Command Line Parsing
 	switch command {
+
 	case "version":
 		fmt.Println(version)
 
@@ -77,7 +78,7 @@ func main() {
 		args := flag.Args()
 		err = bootstrap(args[1:])
 
-	case "install", "":
+	case "install":
 		err = install()
 
 	default:
