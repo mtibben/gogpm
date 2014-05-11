@@ -8,21 +8,40 @@ import (
 	"strings"
 )
 
-func (v *vcsCmd) currentRevision(dir string) (tag string, err error) {
+func (v *vcsCmd) currentRevision(dir string) (revision string, err error) {
 	out, err := v.runOutput(dir, v.currentRevisionCmd.cmd)
 	if err != nil {
 		return
 	}
 
 	if v.currentRevisionCmd.pattern == "" {
-		tag = strings.TrimSpace(string(out))
+		revision = strings.TrimSpace(string(out))
 	} else {
 		re := regexp.MustCompile(`(?m-s)` + v.currentRevisionCmd.pattern)
+		m := re.FindStringSubmatch(revision)
+		if len(m) > 1 {
+			revision = m[1]
+		} else {
+			err = errors.New("Regex didn't match")
+		}
+	}
+
+	return
+}
+
+func (v *vcsCmd) currentTag(dir, currentRevision string) (tag string, err error) {
+	out, err := v.runOutput(dir, v.currentTagCmd.cmd, "curRev", currentRevision)
+	if err != nil {
+		return
+	}
+
+	if v.currentTagCmd.pattern == "" {
+		tag = strings.TrimSpace(string(out))
+	} else {
+		re := regexp.MustCompile(`(?m-s)` + v.currentTagCmd.pattern)
 		m := re.FindStringSubmatch(tag)
 		if len(m) > 1 {
 			tag = m[1]
-		} else {
-			err = errors.New("Regex didn't match")
 		}
 	}
 
@@ -57,8 +76,23 @@ func (p *PackageRepo) Dir() string {
 	return filepath.Join(os.Getenv("GOPATH"), "src", p.rr.root)
 }
 
-func (p *PackageRepo) CurrentRevision() (string, error) {
-	return p.rr.vcs.currentRevision(p.Dir())
+func (p *PackageRepo) CurrentTagOrRevision() (string, error) {
+	dir := p.Dir()
+
+	currentRev, err := p.rr.vcs.currentRevision(dir)
+	if err != nil {
+		return "", err
+	}
+	currentTag, err := p.rr.vcs.currentTag(dir, currentRev)
+	if err != nil {
+		return "", err
+	}
+
+	if currentTag != "" {
+		return currentTag, nil
+	} else {
+		return currentRev, nil
+	}
 }
 
 func (p *PackageRepo) SetRevision(version string) error {

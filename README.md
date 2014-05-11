@@ -5,9 +5,9 @@ A go implementation of [gpm](https://github.com/pote/gpm)
 
 ## Goals
  * Keep things small and simple
- * Use go get wherever possible
+ * Use `go get` wherever possible
  * No external dependencies
- * Use go get's own logic for package import path resolution (the vcs package)
+ * Use `go get`'s own logic for package import path resolution (the vcs package)
 
 
 ## Differences from gpm
@@ -40,6 +40,3 @@ $ gpm install
 >> Setting github.com/replicon/fast-archiver to version v1.02
 >> All Done
 ```
-
-## TODO:
- * prefer tags rather than revisions

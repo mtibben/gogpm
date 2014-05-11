@@ -7,7 +7,7 @@ import (
 )
 
 // Iterates over Godep file dependencies and sets
-// the specified version on each of them.
+// the repo revision to the version required version
 func install() error {
 	deps, err := readDepFile()
 	if err != nil {
@@ -15,18 +15,17 @@ func install() error {
 	}
 
 	for dep, wantedVersion := range deps {
-		curVersion := ""
-
 		pkg, err := vcs.PackageForImportPath(dep)
 		if err != nil {
 			return err
 		}
 
-		curVersion, _ = pkg.CurrentRevision()
+		curVersion, _ := pkg.CurrentTagOrRevision()
 
 		if curVersion == wantedVersion {
 			log.Printf("Checked %s\n", dep)
 		} else {
+
 			log.Printf("Getting %s\n", dep)
 			_, err := execCmd("go", "get", "-d", "-u", dep+"/...")
 			if err != nil {

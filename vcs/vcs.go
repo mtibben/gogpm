@@ -19,7 +19,8 @@ type vcsCmd struct {
 	cmd  string // name of binary to invoke command
 
 	tagSyncCmd         string // command to sync to specific tag
-	currentRevisionCmd tagCmd // command to get the current tag/sha
+	currentRevisionCmd tagCmd // command to get the current revision
+	currentTagCmd      tagCmd // command to get the current tag
 
 	scheme  []string
 	pingCmd string
@@ -58,6 +59,7 @@ var vcsHg = &vcsCmd{
 
 	tagSyncCmd:         "update -r {tag}",
 	currentRevisionCmd: tagCmd{"id -i", ""},
+	currentTagCmd:      tagCmd{"id -t", `(\S+)`},
 
 	scheme:  []string{"https", "http", "ssh"},
 	pingCmd: "identify {scheme}://{repo}",
@@ -70,6 +72,7 @@ var vcsGit = &vcsCmd{
 
 	tagSyncCmd:         "checkout {tag}",
 	currentRevisionCmd: tagCmd{"rev-parse HEAD", ""},
+	currentTagCmd:      tagCmd{"tag --points-at HEAD", ""},
 
 	scheme:  []string{"git", "https", "http", "git+ssh"},
 	pingCmd: "ls-remote {scheme}://{repo}",
@@ -81,7 +84,8 @@ var vcsBzr = &vcsCmd{
 	cmd:  "bzr",
 
 	tagSyncCmd:         "update -r {tag}",
-	currentRevisionCmd: tagCmd{"revno", ""},
+	currentRevisionCmd: tagCmd{"revno --tree", ""},
+	currentTagCmd:      tagCmd{"tags -r {curRev}", `(\S+)`},
 
 	scheme:  []string{"https", "http", "bzr", "bzr+ssh"},
 	pingCmd: "info {scheme}://{repo}",

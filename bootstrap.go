@@ -55,29 +55,29 @@ func bootstrap(packages []string) error {
 		return err
 	}
 
-	dependencies := uniq(strings.Split(strings.TrimSpace(depListStr), "\n"))
-	dependencies = append(dependencies, packages...)
+	importPaths := uniq(strings.Split(strings.TrimSpace(depListStr), "\n"))
+	importPaths = append(importPaths, packages...)
 
 	deps := dependencyMap{}
 
-	for _, importPath := range dependencies {
+	for _, importPath := range importPaths {
 		// ignore relative import paths
 		if importPath[0] == '.' {
 			continue
 		}
 
-		// get the repo for the import path
+		// get the RepoPackage for the import path
 		pkg, err := vcs.PackageForImportPath(importPath)
 		if err != nil {
 			return err
 		}
 
-		// if dep has already been found
+		// check if we already have this dep
 		if _, exists := deps[pkg.RootImportPath()]; exists {
 			continue
 		}
 
-		// if the dep is the directory we're working from
+		// check if the dep is the directory we're working from
 		pp, err := filepath.Abs(pkg.Dir())
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func bootstrap(packages []string) error {
 		}
 
 		// current revision of repo
-		version, err := pkg.CurrentRevision()
+		version, err := pkg.CurrentTagOrRevision()
 		if err != nil {
 			return err
 		}
