@@ -1,10 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"os/exec"
 
 	"github.com/mtibben/gogpm/vcs"
 )
@@ -15,11 +13,6 @@ func install() error {
 	deps, err := readDepFile()
 	if err != nil {
 		return err
-	}
-
-	_, err = exec.LookPath("go")
-	if err != nil {
-		return errors.New("Go is currently not installed or in your PATH\n")
 	}
 
 	for dep, wantedVersion := range deps {

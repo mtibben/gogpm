@@ -6,8 +6,8 @@ Features
  * use args to specify which packages to collect deps for (e.g. ./...)
 
 TODO:
- * get rid of bash requirements
  * clean up and simplify vcs
  * improve documentation
  * make depfile parser more flexible, allow comments, etc
  * read dep files from other dep managers (like godep)
+

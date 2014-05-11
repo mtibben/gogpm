@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func fileExists(path string) bool {
@@ -17,11 +18,18 @@ func dirExists(path string) bool {
 }
 
 func execCmd(cmd string) (string, error) {
-	command := exec.Command("bash")
+	var cmdargs []string
 	var out bytes.Buffer
-	command.Stdin = bytes.NewBufferString(cmd)
+
+	cmdfields := strings.Fields(cmd)
+	if len(cmdfields) > 1 {
+		cmdargs = cmdfields[1:]
+	}
+
+	command := exec.Command(cmdfields[0], cmdargs...)
 	command.Stdout = &out
 	command.Stderr = &out
+
 	err := command.Run()
 	if err != nil {
 		return out.String(), err
