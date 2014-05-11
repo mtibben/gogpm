@@ -10,53 +10,52 @@ import (
 	"github.com/mtibben/gogpm/vcs"
 )
 
-func uniq(set []string) (newset []string) {
+// uniq filters a string slice for unique vals
+func uniq(set []string) (uniqSet []string) {
 	sort.Strings(set)
 
 	lastitem := ""
 	for _, item := range set {
 		if item != lastitem {
-			newset = append(newset, item)
+			uniqSet = append(uniqSet, item)
 			lastitem = item
 		}
 	}
 
-	return newset
+	return uniqSet
 }
 
 func bootstrap(pgs []string) error {
 
-	packages := strings.Join(pgs, " ")
-
 	// check if Godeps already exists
-	if fileExists(depsFile) {
+	if depfileExists() {
 		return errors.New("A Godeps file already exists within this directory")
 	}
 
 	log.Println("Installing dependencies")
 
 	// go get dependencies if they're not already present (without updating)
-	_, err := execCmd("go get -d " + packages)
+	_, err := execCmd("go", append([]string{"get", "-d"}, pgs...)...)
 	if err != nil {
 		return err
 	}
 
 	// get a list of dependencies for the packages, including test dependencies
-	depListStr, err := execCmd(fmt.Sprintf(`go list -f '{{join .Deps "\n"}}%s{{ join .TestImports "\n" }}' %s`, "\n", packages))
+	tmpl := fmt.Sprintf(`{{ join .Deps "\n" }}%s{{ join .TestImports "\n" }}`, "\n")
+	depListStr, err := execCmd("go", append([]string{"list", "-f", tmpl}, pgs...)...)
 	if err != nil {
-		log.Println(depListStr)
 		return err
 	}
 	depList := uniq(strings.Split(strings.TrimSpace(depListStr), "\n"))
 
 	// filter out standard library
-	depListStr, err = execCmd(`go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ` + strings.Join(depList, " "))
+	depListStr, err = execCmd("go", append([]string{"list", "-f", "{{if not .Standard}}{{.ImportPath}}{{end}}"}, depList...)...)
 	if err != nil {
-		log.Println(depListStr)
 		return err
 	}
 
-	dependencies := append(uniq(strings.Split(strings.TrimSpace(depListStr), "\n")), pgs...)
+	dependencies := uniq(strings.Split(strings.TrimSpace(depListStr), "\n"))
+	dependencies = append(dependencies, pgs...)
 
 	deps := dependencyMap{}
 

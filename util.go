@@ -2,36 +2,21 @@ package main
 
 import (
 	"bytes"
-	"os"
+	"log"
 	"os/exec"
-	"strings"
 )
 
-func fileExists(path string) bool {
-	fi, err := os.Stat(path)
-	return !os.IsNotExist(err) && !fi.IsDir()
-}
-
-func dirExists(path string) bool {
-	fi, err := os.Stat(path)
-	return !os.IsNotExist(err) && fi.IsDir()
-}
-
-func execCmd(cmd string) (string, error) {
-	var cmdargs []string
+func execCmd(cmdname string, cmdargs ...string) (string, error) {
 	var out bytes.Buffer
 
-	cmdfields := strings.Fields(cmd)
-	if len(cmdfields) > 1 {
-		cmdargs = cmdfields[1:]
-	}
-
-	command := exec.Command(cmdfields[0], cmdargs...)
+	command := exec.Command(cmdname, cmdargs...)
 	command.Stdout = &out
 	command.Stderr = &out
 
 	err := command.Run()
 	if err != nil {
+		log.Printf("Error while executing: %s %v\n", cmdname, cmdargs)
+		log.Println(out.String())
 		return out.String(), err
 	}
 

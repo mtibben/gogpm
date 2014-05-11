@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/mtibben/gogpm/vcs"
@@ -27,9 +26,8 @@ func install() error {
 			log.Printf("Checked %s\n", dep)
 		} else {
 			log.Printf("Getting %s\n", dep)
-			out, err := execCmd(fmt.Sprintf(`go get -d -u "%s/..."`, dep))
+			out, err := execCmd("go", "get", "-d", "-u", dep+"/...")
 			if err != nil {
-				log.Println(out)
 				return err
 			}
 

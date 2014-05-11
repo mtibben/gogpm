@@ -11,8 +11,13 @@ import (
 // dep => version
 type dependencyMap map[string]string
 
+func depfileExists() bool {
+	fi, err := os.Stat(depsFile)
+	return !os.IsNotExist(err) && !fi.IsDir()
+}
+
 func readDepFile() (dependencyMap, error) {
-	if !fileExists(depsFile) {
+	if !depfileExists() {
 		return nil, fmt.Errorf("%s file does not exist", depsFile)
 	}
 
