@@ -25,18 +25,18 @@ type VcsCmd struct {
 	// 	tagLookupCmd   []tagCmd // commands to lookup tags before running tagSyncCmd
 	tagSyncCmd string // command to sync to specific tag
 	// 	tagSyncDefault string   // command to sync to default tag
-	tagCurrentCmd string // command to get the current tag/sha
+	tagCurrentCmd tagCmd // command to get the current tag/sha
 
 	scheme  []string
 	pingCmd string
 }
 
-// // A tagCmd describes a command to list available tags
-// // that can be passed to tagSyncCmd.
-// type tagCmd struct {
-// 	cmd     string // command to list tags
-// 	pattern string // regexp to extract tags from list
-// }
+// A tagCmd describes a command to list available tags
+// that can be passed to tagSyncCmd.
+type tagCmd struct {
+	cmd     string // command to list tags
+	pattern string // regexp to extract tags from list
+}
 
 // vcsList lists the known version control systems
 var vcsList = []*VcsCmd{
@@ -76,7 +76,7 @@ var VcsHg = &VcsCmd{
 	// 	},
 	tagSyncCmd: "update -r {tag}",
 	// 	tagSyncDefault: "update default",
-	tagCurrentCmd: "id -i",
+	tagCurrentCmd: tagCmd{"id -i", ""},
 
 	scheme:  []string{"https", "http", "ssh"},
 	pingCmd: "identify {scheme}://{repo}",
@@ -100,7 +100,7 @@ var VcsGit = &VcsCmd{
 	// 	},
 	tagSyncCmd: "checkout {tag}",
 	// 	tagSyncDefault: "checkout master",
-	tagCurrentCmd: "rev-parse HEAD",
+	tagCurrentCmd: tagCmd{"rev-parse HEAD", ""},
 
 	scheme:  []string{"git", "https", "http", "git+ssh"},
 	pingCmd: "ls-remote {scheme}://{repo}",
@@ -120,7 +120,7 @@ var VcsBzr = &VcsCmd{
 	// 	tagCmd:         []tagCmd{{"tags", `^(\S+)`}},
 	tagSyncCmd: "update -r {tag}",
 	// 	tagSyncDefault: "update -r revno:-1",
-	tagCurrentCmd: "revno",
+	tagCurrentCmd: tagCmd{"revno", ""},
 
 	scheme:  []string{"https", "http", "bzr", "bzr+ssh"},
 	pingCmd: "info {scheme}://{repo}",
@@ -136,6 +136,9 @@ var VcsSvn = &VcsCmd{
 
 	// 	// There is no tag command in subversion.
 	// 	// The branch information is all in the path names.
+
+	tagSyncCmd:    "update -r {tag}",
+	tagCurrentCmd: tagCmd{"info", `Revision: (\S+)`},
 
 	scheme:  []string{"https", "http", "svn", "svn+ssh"},
 	pingCmd: "info {scheme}://{repo}",
@@ -252,9 +255,25 @@ func (v *VcsCmd) ping(scheme, repo string) error {
 // 	return v.run(dir, "checkout master")
 // }
 
-func (v *VcsCmd) CurrentTag(dir string) (string, error) {
-	tag, err := v.runOutput(dir, v.tagCurrentCmd)
-	return strings.TrimSpace(string(tag)), err
+func (v *VcsCmd) CurrentTag(dir string) (tag string, err error) {
+	out, err := v.runOutput(dir, v.tagCurrentCmd.cmd)
+	if err != nil {
+		return
+	}
+
+	if v.tagCurrentCmd.pattern == "" {
+		tag = strings.TrimSpace(string(out))
+	} else {
+		re := regexp.MustCompile(`(?m-s)` + v.tagCurrentCmd.pattern)
+		m := re.FindStringSubmatch(tag)
+		if len(m) > 1 {
+			tag = m[1]
+		} else {
+			err = errors.New("Regex didn't match")
+		}
+	}
+
+	return
 }
 
 // // tags returns the list of available tags for the repo in dir.
