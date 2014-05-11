@@ -67,7 +67,7 @@ func bootstrap(packages []string) error {
 		}
 
 		// get the repo for the import path
-		pkg, err := vcs.PackageFromImportPath(importPath)
+		pkg, err := vcs.PackageForImportPath(importPath)
 		if err != nil {
 			return err
 		}
@@ -78,11 +78,11 @@ func bootstrap(packages []string) error {
 		}
 
 		// if the dep is the directory we're working from
-		pp, err := filepath.Abs(pkg.Path())
+		pp, err := filepath.Abs(pkg.Dir())
 		if err != nil {
 			return err
 		}
-		wd, _ := filepath.Abs(workingDir)
+		wd, err := filepath.Abs(workingDir)
 		if err != nil {
 			return err
 		}

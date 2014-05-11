@@ -14,12 +14,12 @@ import (
 
 // A vcsCmd describes how to use a version control system
 // like Mercurial, Git, or Subversion.
-type VcsCmd struct {
+type vcsCmd struct {
 	name string
 	cmd  string // name of binary to invoke command
 
-	tagSyncCmd    string // command to sync to specific tag
-	tagCurrentCmd tagCmd // command to get the current tag/sha
+	tagSyncCmd         string // command to sync to specific tag
+	currentRevisionCmd tagCmd // command to get the current tag/sha
 
 	scheme  []string
 	pingCmd string
@@ -33,16 +33,16 @@ type tagCmd struct {
 }
 
 // vcsList lists the known version control systems
-var vcsList = []*VcsCmd{
-	VcsHg,
-	VcsGit,
-	VcsSvn,
-	VcsBzr,
+var vcsList = []*vcsCmd{
+	vcsHg,
+	vcsGit,
+	vcsSvn,
+	vcsBzr,
 }
 
 // vcsByCmd returns the version control system for the given
 // command name (hg, git, svn, bzr).
-func vcsByCmd(cmd string) *VcsCmd {
+func vcsByCmd(cmd string) *vcsCmd {
 	for _, vcs := range vcsList {
 		if vcs.cmd == cmd {
 			return vcs
@@ -51,67 +51,67 @@ func vcsByCmd(cmd string) *VcsCmd {
 	return nil
 }
 
-// VcsHg describes how to use Mercurial.
-var VcsHg = &VcsCmd{
+// vcsHg describes how to use Mercurial.
+var vcsHg = &vcsCmd{
 	name: "Mercurial",
 	cmd:  "hg",
 
-	tagSyncCmd:    "update -r {tag}",
-	tagCurrentCmd: tagCmd{"id -i", ""},
+	tagSyncCmd:         "update -r {tag}",
+	currentRevisionCmd: tagCmd{"id -i", ""},
 
 	scheme:  []string{"https", "http", "ssh"},
 	pingCmd: "identify {scheme}://{repo}",
 }
 
-// VcsGit describes how to use Git.
-var VcsGit = &VcsCmd{
+// vcsGit describes how to use Git.
+var vcsGit = &vcsCmd{
 	name: "Git",
 	cmd:  "git",
 
-	tagSyncCmd:    "checkout {tag}",
-	tagCurrentCmd: tagCmd{"rev-parse HEAD", ""},
+	tagSyncCmd:         "checkout {tag}",
+	currentRevisionCmd: tagCmd{"rev-parse HEAD", ""},
 
 	scheme:  []string{"git", "https", "http", "git+ssh"},
 	pingCmd: "ls-remote {scheme}://{repo}",
 }
 
-// VcsBzr describes how to use Bazaar.
-var VcsBzr = &VcsCmd{
+// vcsBzr describes how to use Bazaar.
+var vcsBzr = &vcsCmd{
 	name: "Bazaar",
 	cmd:  "bzr",
 
-	tagSyncCmd:    "update -r {tag}",
-	tagCurrentCmd: tagCmd{"revno", ""},
+	tagSyncCmd:         "update -r {tag}",
+	currentRevisionCmd: tagCmd{"revno", ""},
 
 	scheme:  []string{"https", "http", "bzr", "bzr+ssh"},
 	pingCmd: "info {scheme}://{repo}",
 }
 
-// VcsSvn describes how to use Subversion.
-var VcsSvn = &VcsCmd{
+// vcsSvn describes how to use Subversion.
+var vcsSvn = &vcsCmd{
 	name: "Subversion",
 	cmd:  "svn",
 
-	tagSyncCmd:    "update -r {tag}",
-	tagCurrentCmd: tagCmd{"info", `Revision: (\S+)`},
+	tagSyncCmd:         "update -r {tag}",
+	currentRevisionCmd: tagCmd{"info", `Revision: (\S+)`},
 
 	scheme:  []string{"https", "http", "svn", "svn+ssh"},
 	pingCmd: "info {scheme}://{repo}",
 }
 
 // runVerboseOnly is like run but only generates error output to standard error in verbose mode.
-func (v *VcsCmd) runVerboseOnly(dir string, cmd string, keyval ...string) error {
+func (v *vcsCmd) runVerboseOnly(dir string, cmd string, keyval ...string) error {
 	_, err := v.run1(dir, cmd, keyval, false)
 	return err
 }
 
 // runOutput is like run but returns the output of the command.
-func (v *VcsCmd) runOutput(dir string, cmd string, keyval ...string) ([]byte, error) {
+func (v *vcsCmd) runOutput(dir string, cmd string, keyval ...string) ([]byte, error) {
 	return v.run1(dir, cmd, keyval, true)
 }
 
 // run1 is the generalized implementation of run and runOutput.
-func (v *VcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool) ([]byte, error) {
+func (v *vcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool) ([]byte, error) {
 	m := make(map[string]string)
 	for i := 0; i < len(keyval); i += 2 {
 		m[keyval[i]] = keyval[i+1]
@@ -152,35 +152,8 @@ func (v *VcsCmd) run1(dir string, cmdline string, keyval []string, verbose bool)
 }
 
 // ping pings to determine scheme to use.
-func (v *VcsCmd) ping(scheme, repo string) error {
+func (v *vcsCmd) ping(scheme, repo string) error {
 	return v.runVerboseOnly(".", v.pingCmd, "scheme", scheme, "repo", repo)
-}
-
-func (v *VcsCmd) CurrentTag(dir string) (tag string, err error) {
-	out, err := v.runOutput(dir, v.tagCurrentCmd.cmd)
-	if err != nil {
-		return
-	}
-
-	if v.tagCurrentCmd.pattern == "" {
-		tag = strings.TrimSpace(string(out))
-	} else {
-		re := regexp.MustCompile(`(?m-s)` + v.tagCurrentCmd.pattern)
-		m := re.FindStringSubmatch(tag)
-		if len(m) > 1 {
-			tag = m[1]
-		} else {
-			err = errors.New("Regex didn't match")
-		}
-	}
-
-	return
-}
-
-func (v *VcsCmd) Checkout(dir, tag string) error {
-	_, err := v.runOutput(dir, v.tagSyncCmd, "tag", tag)
-	// log.Println(string(out))
-	return err
 }
 
 // A vcsPath describes how to convert an import path into a
@@ -198,20 +171,20 @@ type vcsPath struct {
 
 // repoRoot represents a version control system, a repo, and a root of
 // where to put it on disk.
-type RepoRoot struct {
-	Vcs *VcsCmd
+type repoRoot struct {
+	vcs *vcsCmd
 
 	// repo is the repository URL, including scheme
-	Repo string
+	repo string
 
 	// root is the import path corresponding to the root of the
 	// repository
-	Root string
+	root string
 }
 
 // repoRootForImportPath analyzes importPath to determine the
 // version control system, and code repository to use.
-func RepoRootForImportPath(importPath string) (*RepoRoot, error) {
+func repoRootForImportPath(importPath string) (*repoRoot, error) {
 	rr, err := repoRootForImportPathStatic(importPath, "")
 	if err == errUnknownSite {
 		rr, err = repoRootForImportDynamic(importPath)
@@ -228,7 +201,7 @@ func RepoRootForImportPath(importPath string) (*RepoRoot, error) {
 		}
 	}
 
-	if err == nil && strings.Contains(importPath, "...") && strings.Contains(rr.Root, "...") {
+	if err == nil && strings.Contains(importPath, "...") && strings.Contains(rr.root, "...") {
 		// Do not allow wildcards in the repo root.
 		rr = nil
 		err = fmt.Errorf("cannot expand ... in %q", importPath)
@@ -244,7 +217,7 @@ var errUnknownSite = errors.New("dynamic lookup required to find mapping")
 // containing its VCS type (foo.com/repo.git/dir)
 //
 // If scheme is non-empty, that scheme is forced.
-func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
+func repoRootForImportPathStatic(importPath, scheme string) (*repoRoot, error) {
 	if strings.Contains(importPath, "://") {
 		return nil, fmt.Errorf("invalid import path %q", importPath)
 	}
@@ -297,10 +270,10 @@ func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 				}
 			}
 		}
-		rr := &RepoRoot{
-			Vcs:  vcs,
-			Repo: match["repo"],
-			Root: match["root"],
+		rr := &repoRoot{
+			vcs:  vcs,
+			repo: match["repo"],
+			root: match["root"],
 		}
 		return rr, nil
 	}
@@ -311,7 +284,7 @@ func repoRootForImportPathStatic(importPath, scheme string) (*RepoRoot, error) {
 // statically known by repoRootForImportPathStatic.
 //
 // This handles "vanity import paths" like "name.tld/pkg/foo".
-func repoRootForImportDynamic(importPath string) (*RepoRoot, error) {
+func repoRootForImportDynamic(importPath string) (*repoRoot, error) {
 	slash := strings.Index(importPath, "/")
 	if slash < 0 {
 		return nil, errors.New("import path doesn't contain a slash")
@@ -370,12 +343,12 @@ func repoRootForImportDynamic(importPath string) (*RepoRoot, error) {
 	if !strings.Contains(metaImport.RepoRoot, "://") {
 		return nil, fmt.Errorf("%s: invalid repo root %q; no scheme", urlStr, metaImport.RepoRoot)
 	}
-	rr := &RepoRoot{
-		Vcs:  vcsByCmd(metaImport.VCS),
-		Repo: metaImport.RepoRoot,
-		Root: metaImport.Prefix,
+	rr := &repoRoot{
+		vcs:  vcsByCmd(metaImport.VCS),
+		repo: metaImport.RepoRoot,
+		root: metaImport.Prefix,
 	}
-	if rr.Vcs == nil {
+	if rr.vcs == nil {
 		return nil, fmt.Errorf("%s: unknown vcs %q", urlStr, metaImport.VCS)
 	}
 	return rr, nil
@@ -509,7 +482,7 @@ func googleCodeVCS(match map[string]string) error {
 		if vcs := vcsByCmd(string(m[1])); vcs != nil {
 			// Subversion requires the old URLs.
 			// TODO: Test.
-			if vcs == VcsSvn {
+			if vcs == vcsSvn {
 				if match["subrepo"] != "" {
 					return fmt.Errorf("sub-repositories not supported in Google Code Subversion projects")
 				}

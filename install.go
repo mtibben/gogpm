@@ -17,7 +17,7 @@ func install() error {
 	for dep, wantedVersion := range deps {
 		curVersion := ""
 
-		pkg, err := vcs.PackageFromImportPath(dep)
+		pkg, err := vcs.PackageForImportPath(dep)
 		if err != nil {
 			return err
 		}
