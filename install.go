@@ -7,9 +7,7 @@ import (
 )
 
 func goget(dep string) (string, error) {
-	// we need the /... else sometimes we get
-	// 	   imports github.com/bradfitz/gomemcache: no buildable Go source files in /go/src/github.com/bradfitz/gomemcache
-	return execCmd("go", "get", "-d", "-u", dep+"/...")
+	return execCmd("go", "get", "-d", "-u", dep)
 }
 
 // Iterates over Godep file dependencies and sets
@@ -34,7 +32,9 @@ func install() error {
 
 			log.Printf("Getting %s\n", dep)
 
-			_, err := goget(dep)
+			// we need the /... else sometimes we get
+			// 	   imports github.com/bradfitz/gomemcache: no buildable Go source files in /go/src/github.com/bradfitz/gomemcache
+			_, err := goget(dep + "/...")
 			if err != nil {
 				// Sometimes we get the error message
 				//     package gopkg.in/check.v1/...: unrecognized import path "gopkg.in/check.v1/..."
