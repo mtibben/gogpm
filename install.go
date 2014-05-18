@@ -7,7 +7,9 @@ import (
 )
 
 func goget(dep string) (string, error) {
-	return execCmd("go", "get", "-d", "-u", dep)
+	// we need the /... else sometimes we get
+	// 	   imports github.com/bradfitz/gomemcache: no buildable Go source files in /go/src/github.com/bradfitz/gomemcache
+	return execCmd("go", "get", "-d", "-u", dep+"/...")
 }
 
 // Iterates over Godep file dependencies and sets
@@ -35,7 +37,7 @@ func install() error {
 			_, err := goget(dep)
 			if err != nil {
 				// Sometimes we get the error message
-				//     package xxx: unrecognized import path "xxx"
+				//     package gopkg.in/check.v1/...: unrecognized import path "gopkg.in/check.v1/..."
 				// It seems the package is downloaded however, so running the command
 				// again returns without an error
 				_, err := goget(dep)
