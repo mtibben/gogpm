@@ -75,7 +75,7 @@ func writeDepFile(deps dependencyMap) error {
 	for _, dep := range keys {
 		version := deps[dep]
 
-		line := fmt.Sprintf("%-[3]*[1]s %[2]s", dep, version, klen+1)
+		line := fmt.Sprintf("%-[3]*[1]s %[2]s", dep, version, klen)
 
 		if _, err = f.WriteString(line + "\n"); err != nil {
 			return err
