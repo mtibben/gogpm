@@ -6,6 +6,10 @@ import (
 	"github.com/mtibben/gogpm/vcs"
 )
 
+func goget(dep string) (string, error) {
+	return execCmd("go", "get", "-d", "-u", dep)
+}
+
 // Iterates over Godep file dependencies and sets
 // the repo revision to the version required version
 func install() error {
@@ -27,10 +31,20 @@ func install() error {
 		} else {
 
 			log.Printf("Getting %s\n", dep)
-			_, err := execCmd("go", "get", "-d", "-u", dep+"/...")
+
+			_, err := goget(dep)
 			if err != nil {
-				return err
+				// Sometimes we get the error message
+				//     package xxx: unrecognized import path "xxx"
+				// It seems the package is downloaded however, so running the command
+				// again returns without an error
+				_, err := goget(dep)
+				if err != nil {
+					return err
+				}
 			}
+
+			log.Printf("Setting %s to %s\n", dep, wantedVersion)
 
 			err = pkg.SetRevision(wantedVersion)
 			if err != nil {
