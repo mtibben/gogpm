@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -12,7 +11,7 @@ import (
 const (
 	version      = "gogpm 1.0-pre (gpm v1.2.1 equiv)"
 	lockfileName = "Godeps"
-	usage        = `gogpm is a tool for managing package dependency versions
+	usageStr     = `gogpm is a tool for managing package dependency versions
 
 gogpm leverages the power of the go get command and the underlying version
 control systems used by it to set your Go dependencies to desired versions,
@@ -69,6 +68,10 @@ func main() {
 	var err error
 
 	// parse flags and opts
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usageStr+"\n")
+		os.Exit(1)
+	}
 	flag.Parse()
 	command := flag.Arg(0)
 
@@ -86,7 +89,7 @@ func main() {
 		err = install()
 
 	default:
-		err = errors.New(usage)
+		flag.Usage()
 	}
 
 	if err != nil {
