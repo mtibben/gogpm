@@ -76,6 +76,20 @@ func (p *PackageRepo) Dir() string {
 	return filepath.Join(os.Getenv("GOPATH"), "src", p.rr.root)
 }
 
+// IsCurrentTagOrRevision checks if the given version matches
+// the current tag or revision
+func (p *PackageRepo) IsCurrentTagOrRevision(version string) bool {
+	dir := p.Dir()
+
+	currentRev, _ := p.rr.vcs.currentRevision(dir)
+	if currentRev == version {
+		return true
+	}
+
+	currentTag, _ := p.rr.vcs.currentTag(dir, currentRev)
+	return currentTag == version
+}
+
 func (p *PackageRepo) CurrentTagOrRevision() (string, error) {
 	dir := p.Dir()
 

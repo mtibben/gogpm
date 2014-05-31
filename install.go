@@ -24,9 +24,7 @@ func install() error {
 			return err
 		}
 
-		curVersion, _ := pkg.CurrentTagOrRevision()
-
-		if curVersion == wantedVersion {
+		if pkg.IsCurrentTagOrRevision(wantedVersion) {
 			log.Printf("Checked %s\n", dep)
 		} else {
 
