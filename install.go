@@ -1,10 +1,6 @@
 package main
 
-import (
-	"log"
-
-	"github.com/mtibben/gogpm/vcs"
-)
+import "github.com/mtibben/gogpm/vcs"
 
 func goget(dep string) (string, error) {
 	return execCmd("go", "get", "-d", "-u", dep)
@@ -25,10 +21,10 @@ func install() error {
 		}
 
 		if pkg.IsCurrentTagOrRevision(wantedVersion) {
-			log.Printf("Checked %s\n", dep)
+			logVerbose.Printf("Checked %s\n", dep)
 		} else {
 
-			log.Printf("Getting %s\n", dep)
+			logVerbose.Printf("Getting %s\n", dep)
 
 			// we need the /... else sometimes we get
 			// 	   imports github.com/bradfitz/gomemcache: no buildable Go source files in /go/src/github.com/bradfitz/gomemcache
@@ -44,7 +40,7 @@ func install() error {
 				}
 			}
 
-			log.Printf("Setting %s to %s\n", dep, wantedVersion)
+			logVerbose.Printf("Setting %s to %s\n", dep, wantedVersion)
 
 			err = pkg.SetRevision(wantedVersion)
 			if err != nil {
@@ -53,7 +49,7 @@ func install() error {
 		}
 	}
 
-	log.Println("All Done")
+	logVerbose.Println("All Done")
 
 	return nil
 }

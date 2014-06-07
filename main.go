@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 const (
 	version      = "gogpm 1.0-pre (gpm v1.2.1 equiv)"
 	lockfileName = "Godeps"
-	usageStr     = `gogpm is a tool for managing package dependency versions
+	usage        = `gogpm is a tool for managing package dependency versions
 
 gogpm leverages the power of the go get command and the underlying version
 control systems used by it to set your Go dependencies to desired versions,
@@ -24,40 +25,65 @@ from its version control system, an example Godeps file looks like this:
     $ cat Godeps
     # This is a comment
     github.com/nu7hatch/gotrail         v0.0.2
-    github.com/replicon/fast-archiver   v1.02   #This is another comment!
-    github.com/nu7hatch/gotrail         2eb79d1f03ab24bacbc32b15b75769880629a865
+    github.com/replicon/fast-archiver   v1.02    # Tag
+    github.com/nu7hatch/gotrail         2eb79d1f # Revisions
 
 
-Usage:
+Usage: gogpm [-v] <command>
 
-    $ gogpm bootstrap [packages]    # Downloads all top-level packages required by the listed
-                                    # import paths and generates a Godeps file with their
-                                    # latest tags or revisions.
-                                    # For more about specifying packages, see 'go help packages'.
+    $ gogpm [-v] bootstrap [packages]  # Downloads and installs the packages
+                                       # named by the import paths along with
+                                       # their dependencies (executes
+                                       # go get -d [packages]).
+                                       #
+                                       # Generates a Godeps file with the
+                                       # package's current tags or revisions.
+                                       # For more about specifying packages,
+                                       # see 'go help packages'.
 
-    $ gogpm install                 # Parses the Godeps file, installs dependencies and sets
-                                    # them to the appropriate version.
+    $ gogpm [-v] install               # Parses the Godeps file, installs
+                                       # dependencies and sets them to the
+                                       # appropriate version.
 
-    $ gogpm version                 # Outputs version information
+    $ gogpm version                    # Outputs version information
 
-    $ gogpm help                    # Prints this message
+    $ gogpm help                       # Prints this message
 
+The -v flag makes the output more verbose.
 `
 )
 
 var depsFile, workingDir string
 
+var logErr = log.New(os.Stderr, "", 0)
+var logVerbose = log.New(ioutil.Discard, "", 0)
+
+func initLogging(verbose bool) {
+	log.SetFlags(0)
+	log.SetPrefix("")
+	if verbose {
+		logVerbose = log.New(os.Stdout, "", 0)
+	}
+}
+
 func init() {
 	var err error
 
-	log.SetPrefix(">> ")
-	log.SetFlags(0)
+	// parse flags and opts
+	flag.Usage = func() {
+		logErr.Println(usage)
+		os.Exit(1)
+	}
+	// flag.BoolVar(verbose, "verbose", false, "Verbose")
+	verbose := flag.Bool("v", false, "Verbose")
+	flag.Parse()
+
+	initLogging(*verbose)
 
 	// get the working directory
 	workingDir, err = os.Getwd()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error()+"\n")
-		os.Exit(1)
+		logErr.Fatalln(err.Error())
 	}
 
 	// lockfile name
@@ -67,12 +93,6 @@ func init() {
 func main() {
 	var err error
 
-	// parse flags and opts
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usageStr+"\n")
-		os.Exit(1)
-	}
-	flag.Parse()
 	command := flag.Arg(0)
 
 	// Command Line Parsing
@@ -93,7 +113,6 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error()+"\n")
-		os.Exit(1)
+		logErr.Fatalln(err.Error())
 	}
 }

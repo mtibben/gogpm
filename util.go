@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"log"
 	"os/exec"
 )
 
@@ -15,8 +14,8 @@ func execCmd(cmdname string, cmdargs ...string) (string, error) {
 
 	err := command.Run()
 	if err != nil {
-		log.Printf("Error while executing: %s %v\n", cmdname, cmdargs)
-		log.Println(out.String())
+		logErr.Printf("Error while executing: %s %v\n", cmdname, cmdargs)
+		logErr.Println(out.String())
 		return out.String(), err
 	}
 

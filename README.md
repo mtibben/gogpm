@@ -64,7 +64,6 @@ $ gpm install
 ## Goals
  * Keep things small and simple
  * Try to use `go get` wherever possible
- * No external dependencies
  * Use Go's own logic for package import path resolution (the vcs package code is from Go 1.2.2)
  * Don't replicate any functionality of `go get`
 

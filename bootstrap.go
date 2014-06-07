@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -33,7 +32,7 @@ func bootstrap(packages []string) error {
 		return errors.New("A Godeps file already exists within this directory")
 	}
 
-	log.Println("Installing dependencies")
+	logVerbose.Println("Installing dependencies")
 
 	// go get dependencies if they're not already present (without updating)
 	_, err := execCmd("go", append([]string{"get", "-d"}, packages...)...)
@@ -96,17 +95,17 @@ func bootstrap(packages []string) error {
 			return err
 		}
 
-		log.Printf(`Adding package "%s" version "%s"`, pkg.RootImportPath(), version)
+		logVerbose.Printf(`Adding package "%s" version "%s"`, pkg.RootImportPath(), version)
 		deps[pkg.RootImportPath()] = version
 	}
 
-	log.Printf("Writing Godeps file")
+	logVerbose.Printf("Writing Godeps file")
 	err = writeDepFile(deps)
 	if err != nil {
 		return err
 	}
 
-	log.Println("All Done")
+	logVerbose.Println("All Done")
 
 	return nil
 }
