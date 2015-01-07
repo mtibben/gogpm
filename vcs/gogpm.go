@@ -2,7 +2,6 @@ package vcs
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -78,16 +77,22 @@ func (p *PackageRepo) Dir() string {
 	goPath := os.Getenv("GOPATH")
 	paths := strings.Split(goPath, ":")
 
-	// find which gopath has the project
+	// construct path options for repo
+	fullPaths := []string{}
 	for _, path := range paths {
-		fullPath := filepath.Join(path, "src", p.rr.root)
-		_, err := os.Stat(fullPath)
+		fullPaths = append(fullPaths, filepath.Join(path, "src", p.rr.root))
+	}
+
+	// return first instance where lib exists
+	for _, path := range fullPaths {
+		_, err := os.Stat(path)
 		if err == nil {
-			return fullPath
+			return path
 		}
 	}
 
-	panic(fmt.Sprintf("Project %v is not in GOPATH of %v", p.rr.root, goPath))
+	// if not installed, put it in FIRST gopath
+	return fullPaths[0]
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
