@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -73,7 +74,30 @@ func (p *PackageRepo) RootImportPath() string {
 }
 
 func (p *PackageRepo) Dir() string {
-	return filepath.Join(os.Getenv("GOPATH"), "src", p.rr.root)
+	// split gopath
+	goPath := os.Getenv("GOPATH")
+	paths := strings.Split(goPath, ":")
+
+	// construct path options for repo
+	fullPaths := []string{}
+	for _, path := range paths {
+		fullPaths = append(fullPaths, filepath.Join(path, "src", p.rr.root))
+	}
+
+	// return first instance where lib exists
+	for _, path := range fullPaths {
+		f, err := os.Stat(path)
+		if err == nil {
+			if f.IsDir() {
+				return path
+			} else {
+				panic(fmt.Sprintf("%v is not a directory"))
+			}
+		}
+	}
+
+	// if not installed, put it in FIRST gopath
+	return fullPaths[0]
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
