@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -73,7 +74,20 @@ func (p *PackageRepo) RootImportPath() string {
 }
 
 func (p *PackageRepo) Dir() string {
-	return filepath.Join(os.Getenv("GOPATH"), "src", p.rr.root)
+	// split gopath
+	goPath := os.Getenv("GOPATH")
+	paths := strings.Split(goPath, ":")
+
+	// find which gopath has the project
+	for _, path := range paths {
+		fullPath := filepath.Join(path, "src", p.rr.root)
+		_, err := os.Stat(fullPath)
+		if err == nil {
+			return fullPath
+		}
+	}
+
+	panic(fmt.Sprintf("Project %v is not in GOPATH of %v", p.rr.root, goPath))
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
