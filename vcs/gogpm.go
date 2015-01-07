@@ -2,7 +2,6 @@ package vcs
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -77,6 +76,10 @@ func (p *PackageRepo) Dir() string {
 	// split gopath
 	goPath := os.Getenv("GOPATH")
 	paths := strings.Split(goPath, ":")
+
+	if len(paths) == 0 {
+		panic("GOPATH not defined")
+	}
 
 	// construct path options for repo
 	fullPaths := []string{}
