@@ -90,8 +90,6 @@ func (p *PackageRepo) Dir() string {
 		if err == nil {
 			if f.IsDir() {
 				return path
-			} else {
-				panic(fmt.Sprintf("%v is not a directory"))
 			}
 		}
 	}
