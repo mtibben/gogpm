@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -85,9 +86,13 @@ func (p *PackageRepo) Dir() string {
 
 	// return first instance where lib exists
 	for _, path := range fullPaths {
-		_, err := os.Stat(path)
+		f, err := os.Stat(path)
 		if err == nil {
-			return path
+			if f.IsDir() {
+				return path
+			} else {
+				panic(fmt.Sprintf("%v is not a directory"))
+			}
 		}
 	}
 
