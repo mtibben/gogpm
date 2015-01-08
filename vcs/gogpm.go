@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"errors"
+	"go/build"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -73,6 +74,13 @@ func (p *PackageRepo) RootImportPath() string {
 }
 
 func (p *PackageRepo) Dir() string {
+	pwd, _ := os.Getwd()
+	pkg, err := currentImportContext().Import(p.rr.root, pwd, build.FindOnly)
+	if err == nil {
+		return pkg.Dir
+	}
+
+	// old codepath-ish
 	// split gopath
 	goPath := os.Getenv("GOPATH")
 	paths := strings.Split(goPath, ":")
@@ -85,16 +93,6 @@ func (p *PackageRepo) Dir() string {
 	fullPaths := []string{}
 	for _, path := range paths {
 		fullPaths = append(fullPaths, filepath.Join(path, "src", p.rr.root))
-	}
-
-	// return first instance where lib exists
-	for _, path := range fullPaths {
-		f, err := os.Stat(path)
-		if err == nil {
-			if f.IsDir() {
-				return path
-			}
-		}
 	}
 
 	// if not installed, put it in FIRST gopath
@@ -136,4 +134,14 @@ func (p *PackageRepo) CurrentTagOrRevision() (string, error) {
 
 func (p *PackageRepo) SetRevision(version string) error {
 	return p.rr.vcs.checkout(p.Dir(), version)
+}
+
+var importContext *build.Context
+
+func currentImportContext() *build.Context {
+	if importContext != nil {
+		return importContext
+	} else {
+		return &build.Default
+	}
 }
