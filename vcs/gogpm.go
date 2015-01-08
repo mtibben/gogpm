@@ -4,7 +4,7 @@ import (
 	"errors"
 	"go/build"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -74,29 +74,24 @@ func (p *PackageRepo) RootImportPath() string {
 }
 
 func (p *PackageRepo) Dir() string {
+	// get go/build to search GOPATH for where it is installed
 	pwd, _ := os.Getwd()
 	pkg, err := currentImportContext().Import(p.rr.root, pwd, build.FindOnly)
 	if err == nil {
 		return pkg.Dir
 	}
+	// TODO when ready to drop support for go 1.3 & under
+	// we should add a check for if the err is a build.MultiplePackageError
 
-	// old codepath-ish
-	// split gopath
-	goPath := os.Getenv("GOPATH")
+	// if uninstalled go get/gogpm will put in first GOPATH entry
+	goPath := currentImportContext().GOPATH
 	paths := strings.Split(goPath, ":")
 
 	if len(paths) == 0 {
 		panic("GOPATH not defined")
 	}
 
-	// construct path options for repo
-	fullPaths := []string{}
-	for _, path := range paths {
-		fullPaths = append(fullPaths, filepath.Join(path, "src", p.rr.root))
-	}
-
-	// if not installed, put it in FIRST gopath
-	return fullPaths[0]
+	return path.Join(paths[0], "src", p.rr.root)
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
