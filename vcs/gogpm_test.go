@@ -12,6 +12,10 @@ import (
 func TestPresentPackageRepoSimpleGopath(t *testing.T) {
 	withDummyBuildContextSingleGopath(t, func(gopath string) {
 		repo, _ := PackageForImportPath("github.com/fake/library")
+		context := build.Default
+		context.GOPATH = gopath
+		repo.ctx = &context
+
 		expected := path.Join(gopath, "src", "/github.com/fake/library")
 		actual := repo.Dir()
 		if actual != expected {
@@ -23,6 +27,10 @@ func TestPresentPackageRepoSimpleGopath(t *testing.T) {
 func TestNotYetInstalledPackageRepoSimpleGopath(t *testing.T) {
 	withDummyBuildContextSingleGopath(t, func(gopath string) {
 		repo, _ := PackageForImportPath("github.com/fake/uninstalledlibrary")
+		context := build.Default
+		context.GOPATH = gopath
+		repo.ctx = &context
+
 		expected := path.Join(gopath, "src", "/github.com/fake/uninstalledlibrary")
 		actual := repo.Dir()
 		if actual != expected {
@@ -42,21 +50,20 @@ func withDummyBuildContextSingleGopath(t *testing.T, testFunc func(string)) {
 		t.Fatal(err)
 	}
 
-	context := build.Default
-	context.GOPATH = fakeGoPath
-	importContext = &context
-
 	// run test
 	testFunc(fakeGoPath)
 
 	// cleanup
-	importContext = nil
 	os.RemoveAll(fakeGoPath)
 }
 
 func TestMultipleGopathSingleInstall(t *testing.T) {
 	withDummyBuildContextMultipleGopath(t, func(gopathOne string, gopathTwo string) {
 		repo, _ := PackageForImportPath("github.com/fake/library")
+		context := build.Default
+		context.GOPATH = strings.Join([]string{gopathOne, gopathTwo}, ":")
+		repo.ctx = &context
+
 		expected := path.Join(gopathTwo, "src", "/github.com/fake/library")
 		actual := repo.Dir()
 		if actual != expected {
@@ -68,6 +75,10 @@ func TestMultipleGopathSingleInstall(t *testing.T) {
 func TestMultipleGopathNoInstall(t *testing.T) {
 	withDummyBuildContextMultipleGopath(t, func(gopathOne string, gopathTwo string) {
 		repo, _ := PackageForImportPath("github.com/fake/uninstalledlibrary")
+		context := build.Default
+		context.GOPATH = strings.Join([]string{gopathOne, gopathTwo}, ":")
+		repo.ctx = &context
+
 		expected := path.Join(gopathOne, "src", "/github.com/fake/uninstalledlibrary")
 		actual := repo.Dir()
 		if actual != expected {
@@ -91,14 +102,9 @@ func withDummyBuildContextMultipleGopath(t *testing.T, testFunc func(string, str
 		t.Fatal(err)
 	}
 
-	context := build.Default
-	context.GOPATH = strings.Join([]string{fakeGoPath, fakeGoPathTwo}, ":")
-	importContext = &context
-
 	// run test
 	testFunc(fakeGoPath, fakeGoPathTwo)
 
 	// cleanup
-	importContext = nil
 	os.RemoveAll(fakeGoPath)
 }
