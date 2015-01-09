@@ -40,8 +40,7 @@ func withDummyBuildContextSingleGopath(t *testing.T, testFunc func(string)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.MkdirAll(path.Join(fakeGoPath, "src/github.com/fake/library"), 0777)
-	if err != nil {
+	if err = os.MkdirAll(path.Join(fakeGoPath, "src/github.com/fake/library"), 0777); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,8 +87,7 @@ func withDummyBuildContextMultipleGopath(t *testing.T, testFunc func(string, str
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.MkdirAll(path.Join(fakeGoPathTwo, "src/github.com/fake/library"), 0777)
-	if err != nil {
+	if err = os.MkdirAll(path.Join(fakeGoPathTwo, "src/github.com/fake/library"), 0777); err != nil {
 		t.Fatal(err)
 	}
 
