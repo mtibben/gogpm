@@ -2,8 +2,9 @@ package vcs
 
 import (
 	"errors"
+	"go/build"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -54,7 +55,8 @@ func (v *vcsCmd) checkout(dir, tag string) error {
 }
 
 type PackageRepo struct {
-	rr *repoRoot
+	rr  *repoRoot
+	ctx build.Context
 }
 
 func PackageForImportPath(importPath string) (*PackageRepo, error) {
@@ -64,7 +66,8 @@ func PackageForImportPath(importPath string) (*PackageRepo, error) {
 	}
 
 	return &PackageRepo{
-		rr: reporoot,
+		rr:  reporoot,
+		ctx: build.Default,
 	}, nil
 }
 
@@ -73,32 +76,25 @@ func (p *PackageRepo) RootImportPath() string {
 }
 
 func (p *PackageRepo) Dir() string {
-	// split gopath
-	goPath := os.Getenv("GOPATH")
+	// get go/build to search GOPATH for where it is installed
+	pwd, _ := os.Getwd()
+	pkg, err := p.ctx.Import(p.rr.root, pwd, build.FindOnly)
+	if err == nil {
+		return pkg.Dir
+	}
+
+	// TODO when ready to drop support for go 1.3 & under
+	// we should add a check for if the err is a build.MultiplePackageError
+
+	// if uninstalled go get/gogpm will put in first GOPATH entry
+	goPath := p.ctx.GOPATH
 	paths := strings.Split(goPath, ":")
 
 	if len(paths) == 0 {
 		panic("GOPATH not defined")
 	}
 
-	// construct path options for repo
-	fullPaths := []string{}
-	for _, path := range paths {
-		fullPaths = append(fullPaths, filepath.Join(path, "src", p.rr.root))
-	}
-
-	// return first instance where lib exists
-	for _, path := range fullPaths {
-		f, err := os.Stat(path)
-		if err == nil {
-			if f.IsDir() {
-				return path
-			}
-		}
-	}
-
-	// if not installed, put it in FIRST gopath
-	return fullPaths[0]
+	return path.Join(paths[0], "src", p.rr.root)
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
