@@ -77,7 +77,10 @@ func (p *PackageRepo) RootImportPath() string {
 
 func (p *PackageRepo) Dir() string {
 	// get go/build to search GOPATH for where it is installed
-	pwd, _ := os.Getwd()
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 	pkg, err := p.ctx.Import(p.rr.root, pwd, build.FindOnly)
 	if err == nil {
 		return pkg.Dir
