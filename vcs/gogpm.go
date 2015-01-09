@@ -82,6 +82,7 @@ func (p *PackageRepo) Dir() string {
 	if err == nil {
 		return pkg.Dir
 	}
+
 	// TODO when ready to drop support for go 1.3 & under
 	// we should add a check for if the err is a build.MultiplePackageError
 

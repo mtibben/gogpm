@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"go/build"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,7 +12,7 @@ import (
 func TestPresentPackageRepoSimpleGopath(t *testing.T) {
 	withDummyBuildContextSingleGopath(t, func(gopath string) {
 		repo, _ := PackageForImportPath("github.com/fake/library")
-		repo.ctx.GOPATH = gopath
+		repo.ctx = build.Context{Compiler: "gc", GOPATH: gopath}
 
 		expected := path.Join(gopath, "src", "/github.com/fake/library")
 		actual := repo.Dir()
@@ -24,7 +25,7 @@ func TestPresentPackageRepoSimpleGopath(t *testing.T) {
 func TestNotYetInstalledPackageRepoSimpleGopath(t *testing.T) {
 	withDummyBuildContextSingleGopath(t, func(gopath string) {
 		repo, _ := PackageForImportPath("github.com/fake/uninstalledlibrary")
-		repo.ctx.GOPATH = gopath
+		repo.ctx = build.Context{Compiler: "gc", GOPATH: gopath}
 
 		expected := path.Join(gopath, "src", "/github.com/fake/uninstalledlibrary")
 		actual := repo.Dir()
@@ -54,7 +55,8 @@ func withDummyBuildContextSingleGopath(t *testing.T, testFunc func(string)) {
 func TestMultipleGopathSingleInstall(t *testing.T) {
 	withDummyBuildContextMultipleGopath(t, func(gopathOne string, gopathTwo string) {
 		repo, _ := PackageForImportPath("github.com/fake/library")
-		repo.ctx.GOPATH = strings.Join([]string{gopathOne, gopathTwo}, ":")
+		gopath := strings.Join([]string{gopathOne, gopathTwo}, ":")
+		repo.ctx = build.Context{Compiler: "gc", GOPATH: gopath}
 
 		expected := path.Join(gopathTwo, "src", "/github.com/fake/library")
 		actual := repo.Dir()
@@ -67,7 +69,8 @@ func TestMultipleGopathSingleInstall(t *testing.T) {
 func TestMultipleGopathNoInstall(t *testing.T) {
 	withDummyBuildContextMultipleGopath(t, func(gopathOne string, gopathTwo string) {
 		repo, _ := PackageForImportPath("github.com/fake/uninstalledlibrary")
-		repo.ctx.GOPATH = strings.Join([]string{gopathOne, gopathTwo}, ":")
+		gopath := strings.Join([]string{gopathOne, gopathTwo}, ":")
+		repo.ctx = build.Context{Compiler: "gc", GOPATH: gopath}
 
 		expected := path.Join(gopathOne, "src", "/github.com/fake/uninstalledlibrary")
 		actual := repo.Dir()
