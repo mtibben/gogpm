@@ -56,7 +56,7 @@ func (v *vcsCmd) checkout(dir, tag string) error {
 
 type PackageRepo struct {
 	rr  *repoRoot
-	ctx *build.Context
+	ctx build.Context
 }
 
 func PackageForImportPath(importPath string) (*PackageRepo, error) {
@@ -66,7 +66,8 @@ func PackageForImportPath(importPath string) (*PackageRepo, error) {
 	}
 
 	return &PackageRepo{
-		rr: reporoot,
+		rr:  reporoot,
+		ctx: build.Default,
 	}, nil
 }
 
@@ -77,7 +78,7 @@ func (p *PackageRepo) RootImportPath() string {
 func (p *PackageRepo) Dir() string {
 	// get go/build to search GOPATH for where it is installed
 	pwd, _ := os.Getwd()
-	pkg, err := p.ImportContext().Import(p.rr.root, pwd, build.FindOnly)
+	pkg, err := p.ctx.Import(p.rr.root, pwd, build.FindOnly)
 	if err == nil {
 		return pkg.Dir
 	}
@@ -85,7 +86,7 @@ func (p *PackageRepo) Dir() string {
 	// we should add a check for if the err is a build.MultiplePackageError
 
 	// if uninstalled go get/gogpm will put in first GOPATH entry
-	goPath := p.ImportContext().GOPATH
+	goPath := p.ctx.GOPATH
 	paths := strings.Split(goPath, ":")
 
 	if len(paths) == 0 {
@@ -125,14 +126,6 @@ func (p *PackageRepo) CurrentTagOrRevision() (string, error) {
 		return currentTag, nil
 	} else {
 		return currentRev, nil
-	}
-}
-
-func (p *PackageRepo) ImportContext() *build.Context {
-	if p.ctx != nil {
-		return p.ctx
-	} else {
-		return &build.Default
 	}
 }
 
