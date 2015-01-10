@@ -5,6 +5,7 @@ import (
 	"go/build"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -91,7 +92,7 @@ func (p *PackageRepo) Dir() string {
 
 	// if uninstalled go get/gogpm will put in first GOPATH entry
 	goPath := p.ctx.GOPATH
-	paths := strings.Split(goPath, ":")
+	paths := filepath.SplitList(goPath)
 
 	if len(paths) == 0 {
 		panic("GOPATH not defined")
