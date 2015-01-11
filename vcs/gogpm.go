@@ -4,7 +4,7 @@ import (
 	"errors"
 	"go/build"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -77,7 +77,10 @@ func (p *PackageRepo) RootImportPath() string {
 
 func (p *PackageRepo) Dir() string {
 	// get go/build to search GOPATH for where it is installed
-	pwd, _ := os.Getwd()
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 	pkg, err := p.ctx.Import(p.rr.root, pwd, build.FindOnly)
 	if err == nil {
 		return pkg.Dir
@@ -88,13 +91,13 @@ func (p *PackageRepo) Dir() string {
 
 	// if uninstalled go get/gogpm will put in first GOPATH entry
 	goPath := p.ctx.GOPATH
-	paths := strings.Split(goPath, ":")
+	paths := filepath.SplitList(goPath)
 
 	if len(paths) == 0 {
 		panic("GOPATH not defined")
 	}
 
-	return path.Join(paths[0], "src", p.rr.root)
+	return filepath.Join(paths[0], "src", p.rr.root)
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
