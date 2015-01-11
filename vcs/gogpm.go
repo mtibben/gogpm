@@ -4,7 +4,6 @@ import (
 	"errors"
 	"go/build"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -98,7 +97,7 @@ func (p *PackageRepo) Dir() string {
 		panic("GOPATH not defined")
 	}
 
-	return path.Join(paths[0], "src", p.rr.root)
+	return filepath.Join(paths[0], "src", p.rr.root)
 }
 
 // IsCurrentTagOrRevision checks if the given version matches
