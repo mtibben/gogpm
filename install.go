@@ -70,30 +70,39 @@ func install() error {
 	if err != nil {
 		return err
 	}
-
-	errChan := make(chan error)
-	active := 0
 	errs := []error{}
 
-	for dep, wantedVersion := range deps {
-		active++
-		go func(dep, wantedVersion string) {
-			errChan <- installDep(dep, wantedVersion)
-		}(dep, wantedVersion)
-	}
+	if concurrencyDisabled {
+		for dep, wantedVersion := range deps {
+			err := installDep(dep, wantedVersion)
+			errs = append(errs, err)
+		}
+	} else {
+		errChan := make(chan error)
+		active := 0
 
-	for {
-		err := <-errChan
-		errs = append(errs, err)
-		active--
-		if active == 0 {
-			break
+		for dep, wantedVersion := range deps {
+			active++
+			go func(dep, wantedVersion string) {
+				errChan <- installDep(dep, wantedVersion)
+			}(dep, wantedVersion)
+		}
+
+		for {
+			err := <-errChan
+			errs = append(errs, err)
+			active--
+			if active == 0 {
+				break
+			}
 		}
 	}
+
 	err = combineErrs(errs)
 	if err == nil {
 		log.Println("All Done")
 	}
 
 	return err
+
 }

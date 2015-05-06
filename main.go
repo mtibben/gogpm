@@ -47,6 +47,8 @@ Usage:
 
 var depsFile, workingDir string
 
+var concurrencyDisabled bool
+
 func init() {
 	var err error
 
@@ -72,6 +74,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, usageStr+"\n")
 		os.Exit(1)
 	}
+	flag.BoolVar(&concurrencyDisabled, "disable-concurrency", false, "Disables concurrency")
 	flag.Parse()
 	command := flag.Arg(0)
 
